@@ -7,7 +7,7 @@ It is not a save-file manager, not a GUI, and not a replacement for 7-Zip. You s
 **Current version: 0.1.0 Release Candidate** (not a stable Release).  
 Clean Windows 11 VM gate: **passed**. Windows 10: optional, not verified.
 
-**[Download this program (7 MB zip of GameArchiveManager, not a Windows ISO)](https://github.com/HypnosysNyx/GameArchiveManager/releases/download/v0.1.0-rc1/GameArchiveManager-0.1.0-RC1.zip)** · [中文说明](#gamearchivemanager-中文)
+**[Download this program ](https://github.com/HypnosysNyx/GameArchiveManager/releases/download/v0.1.0-rc1/GameArchiveManager-0.1.0-RC1.zip)** · [中文说明](#gamearchivemanager-中文)
 
 ---
 
@@ -118,8 +118,7 @@ More docs: [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) · [`docs/CURRENT_STATUS.m
 **当前版本：0.1.0 Release Candidate（候选版，不是正式版）。**  
 干净 Windows 11 验证已通过。Windows 10 未测。
 
-**[下载本程序](https://github.com/HypnosysNyx/GameArchiveManager/releases/download/v0.1.0-rc1/GameArchiveManager-0.1.0-RC1.zip)**（约 7 MB 的软件压缩包，**不是** Windows 系统镜像）
-
+**[下载本程序](https://github.com/HypnosysNyx/GameArchiveManager/releases/download/v0.1.0-rc1/GameArchiveManager-0.1.0-RC1.zip)**
 ## 介绍
 
 网上的游戏资源经常是：假后缀、套了多层压缩、分卷、JPEG 里藏 RAR、带密码、里面还有安卓包或 Office 文件。直接用 7-Zip 全解开，容易得到一堆技术目录，或把不该拆的 APK 拆开。
