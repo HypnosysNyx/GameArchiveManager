@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "last_verified": "2026-08-24",
+  "project": {
+    "name": "GameArchiveManager",
+    "version": "0.1.0",
+    "build_type": "Release Candidate",
+    "phase": "RC"
+  },
+  "test_baseline": {
+    "command": "py -B -m unittest discover -s tests -v",
+    "minimum_test_count": 224,
+    "last_verified_count": 228,
+    "last_verified_status": "PASS"
+  },
+  "current_priorities": {
+    "p0": [],
+    "p1": [
+      "clean_windows_11_vm_smoke_test",
+      "cli_startup_latency_regression"
+    ],
+    "p2": []
+  },
+  "frozen_areas": [
+    "analyzer/archive_analyzer.py",
+    "analyzer/embedded_detector.py",
+    "pipeline/",
+    "extractor/",
+    "recovery/password_recovery.py",
+    "organizer/game_content_classifier.py",
+    "organizer/final_content_resolver.py",
+    "cleanup/cleanup_manager.py"
+  ],
+  "real_samples": {
+    "test_game_1": {
+      "status": "PASS",
+      "local_optional_path": null,
+      "required_for": [
+        "lz4_rar_composite",
+        "password_recovery"
+      ]
+    },
+    "test_game_2": {
+      "status": "PASS",
+      "local_optional_path": null,
+      "required_for": [
+        "repeat_run",
+        "historical_output_isolation",
+        "platform_skip"
+      ]
+    },
+    "test_game_3": {
+      "status": "PASS",
+      "local_optional_path": null,
+      "required_for": [
+        "embedded_archive",
+        "encrypted_rar5",
+        "large_host_file",
+        "split_archive",
+        "runtime_owned_cleanup"
+      ]
+    },
+    "test_game_4": {
+      "status": "PASS",
+      "local_optional_path": null,
+      "required_for": [
+        "initial_scan_boundary",
+        "input_relationship",
+        "save_zip_regression"
+      ]
+    },
+    "test_game_5": {
+      "status": "PASS",
+      "local_optional_path": null,
+      "required_for": [
+        "delivery_unit",
+        "generic_content"
+      ]
+    },
+    "test_game_6": {
+      "status": "PASS",
+      "local_optional_path": null,
+      "required_for": [
+        "composite_failure_diagnostics",
+        "ambiguous_content_selection",
+        "password_candidate_regression"
+      ]
+    }
+  },
+  "release_gates": {
+    "full_test_suite": true,
+    "real_sample_regression": true,
+    "clean_windows_11_vm": false,
+    "clean_windows_10_vm": false,
+    "source_file_integrity": true,
+    "password_leak_check": true,
+    "documentation_current": true
+  }
+}

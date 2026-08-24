@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+*.egg-info/
+
+# Local environments and PyInstaller
+.build_venv/
+.build_venv_rc/
+.venv/
+venv/
+build/
+build_rc_validation/
+dist/
+dist_rc_validation/
+
+# VM gate, handoff snapshots, runtime data
+.vm_gate/
+handoff_output/
+logs/
+*.log
+
+# Do not ship third-party unpacker binaries
+tools/**/*.exe
+tools/**/*.dll
+tools/**/*.lib
+tools/lz4_win64_v1_10_0/
+
+# User / local config and outputs
+config.json
+GameArchive_Output/
+.vscode/
+.idea/
+
+# Empty/broken placeholder
+# (real .git is created by git init)
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
