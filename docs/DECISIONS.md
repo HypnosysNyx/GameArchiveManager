@@ -180,7 +180,7 @@
 
 **Rejected alternatives**：把`input()`放进PasswordRecovery；失败后重启整个Task；默认持久化用户密码；把用户取消记录为WRONG_PASSWORD。
 
-**Consequences**：CLI使用`getpass`；业务层只处理结构化请求/响应。密码默认仅存在内存，只有实际成功后才进入SessionPasswordStore；日志、history、report只记录次数、是否使用和结果，不记录明文。人工尝试有100次安全上限，每次继续均需用户显式动作。
+**Consequences**：CLI默认用可见`input()`读人工密码，以便中文输入法直接使用；明文仍不写入日志、history、report。业务层只处理结构化请求/响应。密码默认仅存在内存，只有实际成功后才进入SessionPasswordStore。人工尝试有100次安全上限，每次继续均需用户显式动作。
 
 ## D-016：平台过滤默认为 opt-in
 

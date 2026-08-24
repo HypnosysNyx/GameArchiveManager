@@ -5,7 +5,7 @@ App version: `0.1.0`
 Build: `Release Candidate`  
 Test baseline: `py -B -m unittest discover -s tests -v` → `Ran 228 tests — OK`  
 Current P0: 无。`mixed_selected_and_ambiguous_content_silent_nondelivery`已完成自动与真实P0修复验证。  
-Current next action: `clean_windows_11_vm` 已 true（EXE `9BFDE4CE…`，清单 8–14 含 JPEG/密码/三阶段中断）。Win10 可选仍未测。保持 `BUILD_TYPE=Release Candidate`，不标正式 Release。显示/隐藏密码冻结不做。桌面旧包不覆盖。
+Current next action: 试用包装 EXE `F5F2DD82…`（人工密码默认可见）。Win11 门禁证据对应上一包 `9BFDE4CE…`。Win10 可选未测。不标正式 Release。桌面旧包不覆盖。
 
 ## Current baseline
 
@@ -48,7 +48,7 @@ Issue ID：`password_candidate_history_pollution`
 
 ## Password recovery status
 
-- **NEXT-1 / `manual_password_recovery_after_exhaustion`**：RESOLVED。自动候选耗尽后，CLI通过`getpass`提供I/S/C闭环；业务层只接收可选回调，不依赖`input()`。
+- **NEXT-1 / `manual_password_recovery_after_exhaustion`**：RESOLVED。自动候选耗尽后，CLI提供I/S/C闭环；人工密码默认可见输入（中文输入法可用），明文不进日志/报告/history。业务层只接收可选回调。
 - 人工密码只存在内存；只有实际成功的密码进入`SessionPasswordStore`，程序退出即消失。
 - `save_passwords`与`auto_try_password`仍是未接线的legacy设置，不代表存在持久密码库。
 - **NEXT-2 / `cli_session_loop`**：COMPLETED（2026-08-15）。CLI启动后保持一个`GameArchiveService`会话，可连续新建单任务或批量任务、查看最近结果/工具/设置并主动退出。Settings、ToolManager、HistoryStorage、ApplicationService和SessionPasswordStore为会话级；Task、RuntimeTracker、Pipeline/Guard、report和task candidates每次重建。

@@ -6,8 +6,8 @@
 - 应用版本：0.1.0
 - 构建类型：Release Candidate
 - 构建标签：RC1
-- 当前重建日期：2026-08-24（Asia/Shanghai）
-- 状态：供干净 Windows VM 冒烟测试使用，不是正式 Release
+- 当前重建日期：2026-08-24（Asia/Shanghai，可见密码 CLI）
+- 状态：试用 RC onedir；不是正式 Release
 
 `version.py` 是应用名称、版本号和构建类型的唯一权威来源。CLI、TaskReport、BatchTaskReport、history JSON 和任务日志均从该模块取得版本信息。
 
@@ -47,6 +47,12 @@ dist\GameArchiveManager-0.1.0-RC1\GameArchiveManager.exe
 ```
 
 构建时 EXE SHA256：
+
+```text
+F5F2DD823664AA2ABFE52A7C91597EA4FA3735E9C3EC8FF0E7A8813D9B92D83C
+```
+
+此前 2026-08-24 Win11 门禁包（隐藏密码 / getpass）EXE SHA256：
 
 ```text
 9BFDE4CE679EDF819AB4CB19E7E29FC6B4D5206134BA63D5739C6F87E27D0AD0

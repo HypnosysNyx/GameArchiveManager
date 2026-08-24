@@ -1,6 +1,5 @@
 """GameArchiveManager 简单命令行入口。"""
 
-import getpass
 from pathlib import Path
 
 from application.app_service import GameArchiveService
@@ -232,7 +231,7 @@ def select_delivery_units(units: list[DeliveryUnit]) -> list[int]:
 def prompt_manual_password(
     request: ManualPasswordRequest,
 ) -> ManualPasswordResponse:
-    """Interactive adapter; passwords are read without normal terminal echo."""
+    """Interactive adapter. Password is echoed so Chinese IME works."""
     print("\n自动密码均未成功。")
     print(f"当前归档: {request.archive_path}")
     print(f"归档格式: {request.archive_format}")
@@ -246,7 +245,8 @@ def prompt_manual_password(
         print("[C] 取消整个任务")
         choice = input("请选择: ").strip().upper()
         if choice == "I":
-            password = getpass.getpass("请输入密码（不会回显）: ")
+            print("请输入密码（会显示，中文输入法可直接用）。")
+            password = input("密码: ")
             if not password:
                 print("密码不能为空。")
                 continue

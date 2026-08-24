@@ -51,7 +51,7 @@
 - **Status**：RESOLVED（2026-08-15）。
 - **Affected modules**：CLI安全输入、ApplicationService、Task/Pipeline编排、ExtractionCoordinator、Report/History安全摘要。
 - **Root cause**：自动候选耗尽状态能够完整传播，但CLI只在任务终止后打印报告，没有在Coordinator仍持有失败`active_plan`时安全交还控制权。
-- **Fix**：新增UI无关的人工恢复请求/响应协议；CLI使用`getpass`；Coordinator仅重试当前失败计划。支持INPUT、SKIP_ARCHIVE、CANCEL_TASK；非交互调用保持原结构化失败。
+- **Fix**：新增UI无关的人工恢复请求/响应协议；CLI 提供 I/S/C（2026-08-24 起密码默认可见输入，不再用 `getpass`）；Coordinator仅重试当前失败计划。支持INPUT、SKIP_ARCHIVE、CANCEL_TASK；非交互调用保持原结构化失败。
 - **Composite/split evidence**：LZ4→RAR只执行一次outer并重试inner；分卷始终使用首卷入口，不分别执行后续卷。
 - **Security**：密码不进入日志、report、history、stdout或对象repr；成功密码仅进入进程内`SessionPasswordStore`，错误密码不保存。
 - **Do not fix by**：不要把`input()`放入业务层；不要持久化明文密码；不要在人工重试时重跑整个Task或已成功Composite outer。

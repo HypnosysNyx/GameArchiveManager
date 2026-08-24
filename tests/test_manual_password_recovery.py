@@ -448,7 +448,7 @@ class ManualPasswordRecoveryTests(unittest.TestCase):
             self.assertEqual(report.manual_password_attempt_count, 1)
             self.assertTrue(report.manual_password_used)
 
-    def test_cli_adapter_uses_getpass_without_printing_password(self):
+    def test_cli_adapter_visible_input_keeps_password_out_of_repr(self):
         request = ManualPasswordRequest(
             Path("inner.rar"),
             "RAR",
@@ -458,14 +458,14 @@ class ManualPasswordRecoveryTests(unittest.TestCase):
             "COMPOSITE_INNER",
         )
         stdout = StringIO()
-        with patch("builtins.input", return_value="I"), patch(
-            "main.getpass.getpass", return_value=TEST_PASSWORD
+        with patch(
+            "builtins.input", side_effect=["I", TEST_PASSWORD]
         ), redirect_stdout(stdout):
             response = main_module.prompt_manual_password(request)
 
         self.assertIs(response.action, ManualPasswordAction.INPUT_PASSWORD)
         self.assertEqual(response.password, TEST_PASSWORD)
-        self.assertNotIn(TEST_PASSWORD, stdout.getvalue())
+        self.assertIn("会显示", stdout.getvalue())
         self.assertNotIn(TEST_PASSWORD, repr(response))
 
 
