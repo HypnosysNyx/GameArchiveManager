@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Python ${{ matrix.python-version }} on Windows
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.10"
+          - "3.12"
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Run automated tests
+        shell: pwsh
+        run: python -B -m unittest discover -s tests -p "test_*.py" -v
+
+      - name: Check local Markdown links
+        if: matrix.python-version == '3.12'
+        shell: pwsh
+        run: python -B scripts/check_markdown_links.py
+
+      - name: Verify project governance state
+        if: matrix.python-version == '3.12'
+        shell: pwsh
+        run: python -B -c "from scripts.verify_project_state import ProjectVerifier, print_report; report = ProjectVerifier().verify(run_tests=False); print_report(report); raise SystemExit(0 if report.passed else 1)"

@@ -1,5 +1,7 @@
 # GameArchiveManager
 
+[![CI](https://github.com/HypnosysNyx/GameArchiveManager/actions/workflows/ci.yml/badge.svg)](https://github.com/HypnosysNyx/GameArchiveManager/actions/workflows/ci.yml) [![CodeQL](https://github.com/HypnosysNyx/GameArchiveManager/actions/workflows/codeql.yml/badge.svg)](https://github.com/HypnosysNyx/GameArchiveManager/actions/workflows/codeql.yml) [![Latest release](https://img.shields.io/github/v/release/HypnosysNyx/GameArchiveManager)](https://github.com/HypnosysNyx/GameArchiveManager/releases/latest) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Windows CLI tool for messy **game download archives**: it looks at real file headers (not the extension), unpacks nested wrappers, tries a limited set of passwords, and copies the actual game (or generic content) to a safe output folder.
 
 It is not a save-file manager, not a GUI, and not a replacement for 7-Zip. You still install 7-Zip; this program decides *what* to unpack and *what* to keep.
@@ -113,7 +115,9 @@ Or `start_game_archive_manager.bat`. Same CLI as the EXE. Tests: `py -B -m unitt
 
 Source is [MIT](LICENSE). 7-Zip, WinRAR, and LZ4 stay under their own licenses. The official LZ4 CLI is GPL-2.0-or-later; this repo does not ship `lz4.exe`.
 
-More docs: [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) · [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md) · [`docs/SECURITY.md`](docs/SECURITY.md) · [`docs/CURRENT_STATUS.md`](docs/CURRENT_STATUS.md) · [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md)
+More docs: [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) · [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md) · [`docs/SECURITY.md`](docs/SECURITY.md) · [`security audit`](docs/SECURITY_AUDIT_2026-08-24.md) · [`docs/CURRENT_STATUS.md`](docs/CURRENT_STATUS.md) · [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md)
+
+Project policies: [`SECURITY.md`](SECURITY.md) · [`CONTRIBUTING.md`](CONTRIBUTING.md) · [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md)
 
 ---
 
@@ -266,3 +270,5 @@ py -B -m unittest discover -s tests -v
 ## 许可证
 
 源码 [MIT](LICENSE)。你自己安装的 7-Zip、WinRAR、LZ4 仍用它们自己的许可证。官方 LZ4 命令行是 GPL-2.0-or-later，本仓库不附带 `lz4.exe`。
+
+项目协作与安全：[`安全报告`](SECURITY.md) · [`贡献指南`](CONTRIBUTING.md) · [`行为准则`](CODE_OF_CONDUCT.md) · [`审计摘要`](docs/SECURITY_AUDIT_2026-08-24.md)

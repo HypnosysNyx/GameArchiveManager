@@ -1,0 +1,78 @@
+name: Bug report
+description: Report a reproducible problem without sharing private or copyrighted files.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for the report. Do not attach passwords, private archives, copyrighted game packages, raw logs, or screenshots containing full local paths. Security vulnerabilities belong in the private process described by SECURITY.md.
+  - type: input
+    id: version
+    attributes:
+      label: GameArchiveManager version
+      description: For example, 0.1.0 RC2 or a commit hash.
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      description: For example, Windows 11 24H2. Do not include your Windows username or device name.
+    validations:
+      required: true
+  - type: dropdown
+    id: format
+    attributes:
+      label: Archive format
+      options:
+        - ZIP
+        - RAR
+        - 7Z
+        - LZ4
+        - Embedded or disguised archive
+        - Split-volume archive
+        - Not archive-specific
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Prefer a minimal synthetic archive and replace personal paths with placeholders.
+      placeholder: |
+        1. Create a synthetic archive containing ...
+        2. Run ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Sanitized diagnostics
+      description: Optional. Remove passwords, usernames, full paths, archive contents, and other personal data.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Privacy and completeness checks
+      options:
+        - label: I searched existing issues and the known-issues document.
+          required: true
+        - label: I removed passwords, personal data, and private paths.
+          required: true
+        - label: This is not a privately reportable security vulnerability.
+          required: true
