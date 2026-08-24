@@ -12,8 +12,9 @@
 - 本次交接前验证：224 tests / PASS；2026-08-24 源码核验 228 tests / PASS
 - 项目治理校验：PASS
 - 真实样本 Test Game 1–6：项目状态记录为 PASS
-- Clean Windows 11 VM：`NOT VERIFIED`
-- 当前发布结论：`NO-GO`
+- Clean Windows 11 VM：`VERIFIED`（`clean_windows_11_vm=true`，EXE `9BFDE4CE…`）
+- 当前发布结论：Win11 门禁通过后 `rc_readiness.py` 预期 **GO**；仍是 0.1.0 Release Candidate，不是正式 Release
+- Windows 10 VM：可选，未验证
 
 `version.py` 是应用版本信息的唯一代码权威来源；`project_state.json` 是项目状态、测试基线和 Release Gate 的机器可读权威来源。不要把 RC 改成正式 Release，也不要把尚未完成的 VM 检查标成通过。
 
@@ -39,15 +40,15 @@ py scripts/rc_readiness.py
 
 - 测试不少于 224 项并全部通过；外部工具相关跳过必须逐项说明，不能当作真实工具验证通过。
 - `verify_project_state.py` 返回 PASS。
-- `rc_readiness.py` 在 Clean Windows 11 VM 完成前应返回 `NO-GO`，这是正确状态，不是需要绕过的失败。
+- `rc_readiness.py` 在 `clean_windows_11_vm=true` 且其它必选门禁通过时应返回 `GO`。Win10 可选未测不单独导致 NO-GO。
 
 如果实际结果与以上基线不同：停止发布动作，按 `docs/DEBUGGING_PROTOCOL.md` 做只读定位，先报告差异和证据，再决定是否修改。
 
-## 3. 当前唯一发布主线
+## 3. 当前发布主线
 
-继续完成干净 Windows 11 VM 冒烟测试，按照 `docs/RC_SMOKE_TEST.md` 收集证据。当前不是新增功能阶段。
+干净 Windows 11 VM 冒烟已按 `docs/RC_SMOKE_TEST.md` 关闭门禁。当前仍不是新增功能阶段；不要把 RC 改成正式 Release，除非用户明确要求并完成发布清单。
 
-已经获得但尚不足以关闭门禁的部分证据：
+Win11 已关闭门禁的证据摘要（详见 `GrokWork\projects\GameArchiveManager\data\vm_gate_20260823.md`）：
 
 - 已在独立 VirtualBox Windows 11 虚拟机启动 RC EXE，VM 中没有可用 Python 开发环境。
 - EXE 能启动并显示 `0.1.0 / Release Candidate`。
@@ -57,12 +58,7 @@ py scripts/rc_readiness.py
 - VirtualBox 共享剪贴板不稳定；曾使用只读虚拟光盘和键盘扫描码完成操作。
 - VM 会偶发停在 `Stopping`，此前在确认 Guest 已进入 OFF/DESTROYING 后才强制结束卡住的 `VirtualBoxVM` 进程。
 
-仍需完成并持久化的关键证据：
-
-- 合法完整部署的 7-Zip、WinRAR CLI、LZ4 检测与真实执行。
-- 普通 ZIP/RAR/7Z/LZ4、分卷、密码包、JPEG embedded RAR、中文路径、重复运行和中断恢复。
-- 输出、history、log、report、源文件 SHA256、不泄露密码、不扫描历史输出、不留下非预期临时目录。
-- 完成后才可将 `project_state.json` 的 `clean_windows_11_vm` 更新为 true，并重新运行三条门禁命令。
+上述项已在干净 Win11 Guest 上留下可审计记录。`clean_windows_11_vm` 已 true。Windows 10 可选未测。
 
 ## 4. Feature Freeze 与禁止事项
 

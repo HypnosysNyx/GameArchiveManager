@@ -95,16 +95,16 @@
 - **Fix**：`max(indexed)==1` 时补下一卷（保留现有宽度：`part2` 或 `part02`）。完整 `part01+part02` 仍可执行。
 - **Do not fix by**：不要按扩展名猜测；不要把普通 `name.rar` 当成分卷；不要为过报告放宽 7z 缺卷规则。
 - **Regression coverage**：`part01` 缺卷不进 Extractor；`part1` 宽度匹配 `part2`；完整 `part01+part02` 可执行；既有 RAR/7z/zip 分卷分组；ApplicationService 报告 `VOLUME_DETECTION`/`MISSING_VOLUME`。完整 228 项通过。
-- **Remaining**：2026-08-24 已重建 EXE `9BFDE4CE…`（未覆盖用户桌面旧包）。干净 Win11 上：单独 `part01` → FAILED / `VOLUME_DETECTION` / `MISSING_VOLUME`、无 `*_extracted`；完整 `part01`–`part05` → COMPLETED 交付 `blob.bin`。整包门禁仍未勾 `clean_windows_11_vm`（新哈希未重跑全部烟测；Win10 可选未测）。
+- **Remaining**：桌面 8/22 旧包未覆盖。Win10 可选未测。Win11 整包门禁已勾。
 
 ### KI-P1-001：干净Windows VM尚未完成最终GO
 
-- **Status**：OPEN。
+- **Status**：RESOLVED for clean Windows 11（2026-08-24）；Windows 10 仍 OPTIONAL / NOT VERIFIED。
 - **Affected modules**：RC构建、runtime paths、ToolManager、配置、日志/history。
-- **Real sample**：测试游戏1～6中的可合法复制测试集合。
-- **Risk**：打包版可能存在开发机路径、权限、工具发现或中文路径差异。
-- **Current workaround**：保持`BUILD_TYPE=Release Candidate`，按`RC_SMOKE_TEST.md`执行。
-- **Do not fix by**：不要在开发机测试通过后直接标正式Release；不要捆绑来源或许可未确认的外部工具。
+- **Real sample**：测试游戏1～6中的可合法复制测试集合；RC 烟测夹具见 `.vm_gate` 记录。
+- **Win11 evidence**：EXE `9BFDE4CE…`；无 Python；工具发现；ZIP/RAR/7Z/LZ4；分卷含 RAR part01 缺卷；JPEG 内嵌；中文路径；人工密码；Ctrl+C 于 EXTRACTING/SCANNING/VALIDATING；源哈希不变；明文 0 hit。
+- **Remaining**：Win10 可选未测。桌面 8/22 旧包未覆盖。
+- **Do not fix by**：不要因为 Win11 GO 就把 `BUILD_TYPE` 改成正式 Release；不要捆绑来源或许可未确认的外部工具。
 
 ### KI-P1-002：旧RC文档的历史基线已过时
 

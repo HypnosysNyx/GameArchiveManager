@@ -3,7 +3,7 @@
 Windows tool for game archive recovery: identify real formats from file headers, extract recursively, try a limited set of passwords, and deliver final content safely.
 
 **Current version: 0.1.0 Release Candidate. This is not a stable Release.**  
-The clean Windows 11 VM gate is still `false` (`clean_windows_11_vm` in `project_state.json`).
+The clean Windows 11 VM gate is `true`. Windows 10 remains optional and unverified. This is still not a stable Release.
 
 [中文说明](#gamearchivemanager-中文)
 
@@ -45,7 +45,7 @@ py scripts/verify_project_state.py
 py scripts/rc_readiness.py
 ```
 
-See `project_state.json` for the test baseline (minimum 224; last verified 228). `rc_readiness.py` should report **NO-GO** until the VM gate is complete.
+See `project_state.json` for the test baseline (minimum 224; last verified 228). After the Win11 VM gate, `rc_readiness.py` should report **GO** (Windows 10 still optional).
 
 ## RC build
 
@@ -69,7 +69,7 @@ Source is [MIT](LICENSE). 7-Zip, WinRAR, and LZ4 keep their own licenses on what
 Windows 游戏资源包整理工具：按真实文件头识别格式，递归解压，有限密码尝试，安全交付最终内容。
 
 **当前版本：0.1.0 Release Candidate。不是正式 Release。**  
-干净 Windows 11 虚拟机门禁尚未勾选通过。
+干净 Windows 11 虚拟机门禁已通过。Windows 10 仍为可选未测。这仍不是正式 Release。
 
 ## 能做什么
 

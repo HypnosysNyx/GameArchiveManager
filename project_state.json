@@ -16,7 +16,6 @@
   "current_priorities": {
     "p0": [],
     "p1": [
-      "clean_windows_11_vm_smoke_test",
       "cli_startup_latency_regression"
     ],
     "p2": []
@@ -90,7 +89,7 @@
   "release_gates": {
     "full_test_suite": true,
     "real_sample_regression": true,
-    "clean_windows_11_vm": false,
+    "clean_windows_11_vm": true,
     "clean_windows_10_vm": false,
     "source_file_integrity": true,
     "password_leak_check": true,
