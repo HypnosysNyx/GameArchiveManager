@@ -7,7 +7,7 @@ It is not a save-file manager, not a GUI, and not a replacement for 7-Zip. You s
 **Current version: 0.1.0 Release Candidate** (not a stable Release).  
 Clean Windows 11 VM gate: **passed**. Windows 10: optional, not verified.
 
-[Download the Windows zip (no Python)](https://github.com/HypnosysNyx/GameArchiveManager/releases/tag/v0.1.0-rc1) · [中文说明](#gamearchivemanager-中文)
+**[Download this program (7 MB zip of GameArchiveManager, not a Windows ISO)](https://github.com/HypnosysNyx/GameArchiveManager/releases/download/v0.1.0-rc1/GameArchiveManager-0.1.0-RC1.zip)** · [中文说明](#gamearchivemanager-中文)
 
 ---
 
@@ -34,7 +34,7 @@ Not included: GUI, bundling 7-Zip/WinRAR/LZ4, persistent password vault, deletin
 ## Windows build (for most users)
 
 1. Install 64-bit **[7-Zip](https://www.7-zip.org/)** to the default folder `C:\Program Files\7-Zip\`. That one tool is enough for ZIP, RAR, and 7Z. WinRAR is only a RAR fallback. LZ4 is only for `.lz4`.
-2. Download **[GameArchiveManager-0.1.0-RC1.zip](https://github.com/HypnosysNyx/GameArchiveManager/releases/download/v0.1.0-rc1/GameArchiveManager-0.1.0-RC1.zip)** and unzip the **whole folder**. Do not copy the `.exe` alone.
+2. **[Download this program](https://github.com/HypnosysNyx/GameArchiveManager/releases/download/v0.1.0-rc1/GameArchiveManager-0.1.0-RC1.zip)** (`GameArchiveManager-0.1.0-RC1.zip`, about 7 MB). Unzip the **whole folder**. Do not copy the `.exe` alone.
 3. Double-click `GameArchiveManager.exe`. You do not need Python. If 7-Zip was just installed, **restart this program** so it can see `7z.exe`.
 4. Startup should show `0.1.0` / `Release Candidate` and `7-Zip: 可用` (or FOUND).
 5. Drag a **folder** (or one archive file) onto the black window, or paste the path, then Enter.
@@ -118,7 +118,7 @@ More docs: [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) · [`docs/CURRENT_STATUS.m
 **当前版本：0.1.0 Release Candidate（候选版，不是正式版）。**  
 干净 Windows 11 验证已通过。Windows 10 未测。
 
-[下载 Windows 压缩包（不用 Python）](https://github.com/HypnosysNyx/GameArchiveManager/releases/tag/v0.1.0-rc1)
+**[下载本程序](https://github.com/HypnosysNyx/GameArchiveManager/releases/download/v0.1.0-rc1/GameArchiveManager-0.1.0-RC1.zip)**（约 7 MB 的软件压缩包，**不是** Windows 系统镜像）
 
 ## 介绍
 
@@ -138,7 +138,7 @@ More docs: [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) · [`docs/CURRENT_STATUS.m
 
 1. 安装 64 位 [7-Zip](https://www.7-zip.org/)，装到默认位置。  
    **只要这一个软件就够解 ZIP、RAR、7Z。** 不必为了 RAR 再装 WinRAR。只有 `.lz4` 才需要另备 `lz4.exe`。  
-2. 打开 [Releases](https://github.com/HypnosysNyx/GameArchiveManager/releases/tag/v0.1.0-rc1)，下载 `GameArchiveManager-0.1.0-RC1.zip`。  
+2. 点 **[下载本程序](https://github.com/HypnosysNyx/GameArchiveManager/releases/download/v0.1.0-rc1/GameArchiveManager-0.1.0-RC1.zip)**，得到 `GameArchiveManager-0.1.0-RC1.zip`（软件，不是系统镜像）。  
 3. 解压后保留**整个文件夹**（里面有 `GameArchiveManager.exe` 和 `_internal`）。不要只拷一个 exe。  
 4. 双击 `GameArchiveManager.exe`。刚装完 7-Zip 的话，请先关掉本程序再开一次，才会识别到。  
 5. 启动时应看到版本 `0.1.0`、`Release Candidate`，以及 7-Zip 状态为「可用」。  
