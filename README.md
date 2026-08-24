@@ -1,126 +1,252 @@
 # GameArchiveManager
 
-Windows tool for game archive recovery: identify real formats from file headers, extract recursively, try a limited set of passwords, and deliver final content safely.
+Windows CLI tool for messy **game download archives**: it looks at real file headers (not the extension), unpacks nested wrappers, tries a limited set of passwords, and copies the actual game (or generic content) to a safe output folder.
 
-**Current version: 0.1.0 Release Candidate. This is not a stable Release.**  
-The clean Windows 11 VM gate is `true`. Windows 10 remains optional and unverified.
+It is not a save-file manager, not a GUI, and not a replacement for 7-Zip. You still install 7-Zip; this program decides *what* to unpack and *what* to keep.
 
-### Use the Windows build (no Python)
+**Current version: 0.1.0 Release Candidate** (not a stable Release).  
+Clean Windows 11 VM gate: **passed**. Windows 10: optional, not verified.
 
-1. Install [7-Zip](https://www.7-zip.org/). For RAR, install WinRAR too. For `.lz4`, put `lz4.exe` in a `tools` folder next to the EXE.
-2. Download the onedir zip from [Releases](https://github.com/HypnosysNyx/GameArchiveManager/releases) when published, or copy the whole `GameArchiveManager-0.1.0-RC1` folder. Never copy the EXE alone.
-3. Double-click `GameArchiveManager.exe`.
-4. Drag a folder or archive onto the console (or paste its path) and press Enter. Type `Y` to confirm. Output is `GameArchive_Output` inside that folder.
-5. If a password is needed: type `I`, then type the password (it is visible so Chinese IME works). It is not written to logs, reports, or history. `S` skips, `C` cancels, `Q` quits.
+[Download the Windows zip (no Python)](https://github.com/HypnosysNyx/GameArchiveManager/releases/tag/v0.1.0-rc1) · [中文说明](#gamearchivemanager-中文)
 
-This program does not modify your source archives. It does not bundle 7-Zip, WinRAR, or LZ4.
+---
 
-[中文说明](#gamearchivemanager-中文)
+## What it can do (all current features)
 
-## What it does
+| Area | Behavior |
+| --- | --- |
+| Formats | ZIP, RAR, 7Z, LZ4 (LZ4 needs `lz4.exe`). Trusts headers, not `.jpg` / `.bin` names |
+| Nested packs | Recursively unpacks wrappers (for example LZ4→RAR) |
+| Disguise / embed | Fake extensions; JPEG host with an embedded RAR |
+| Split volumes | Treats `file.7z.001` + `.002` or `file.part01.rar` + `part02` as one job; missing volume stops *before* extract |
+| Passwords | Auto-tries **empty folder names** next to the archive; then you can type a password (visible, Chinese IME works). Success is remembered only until you quit |
+| Delivery | Copies a game root or generic content into `GameArchive_Output`. Intermediate `*_extracted` folders are not the final product |
+| Safety | Does not modify or delete source archives; does not overwrite previous output (`_2`, `_3`); does not delete user folders by name |
+| Tools | Finds 7-Zip / WinRAR CLI / LZ4 at startup. Does not download or install them |
+| Containers | Leaves APK / Word / Excel / PowerPoint / EPUB / JAR intact unless you drop that file itself as the task |
+| Platform skip | Optional: ignore Android/安卓 or AZ-tagged paths via `config.json` (off by default) |
+| Session | One window: many tasks in a row; menu for batch paths, last report, tool status, settings |
 
-- Does not trust extensions: ZIP / RAR / 7Z / LZ4, disguised files, JPEG-embedded RAR, split volumes
-- Recursive unpack and composite wrappers (for example LZ4→RAR)
-- Automatic password candidates plus interactive CLI recovery (typed passwords are visible in the console; they are not written to logs, reports, or history)
-- Delivers a game root or generic content, not leftover technical folders
-- Does not modify source files, overwrite old output, or delete user directories by name
+Not included: GUI, bundling 7-Zip/WinRAR/LZ4, persistent password vault, deleting source archives, save-game backup.
 
-## What it does not include
+---
 
-- No bundled 7-Zip, WinRAR, or LZ4 binaries (install them yourself or set paths in `config.json`)
-- No silent download/install of tools
-- No GUI in 0.1.0
+## Windows build (for most users)
 
-The official LZ4 CLI is GPL-2.0-or-later; this repository does not ship `lz4.exe`.
+1. Install 64-bit **[7-Zip](https://www.7-zip.org/)** to the default folder `C:\Program Files\7-Zip\`. That one tool is enough for ZIP, RAR, and 7Z. WinRAR is only a RAR fallback. LZ4 is only for `.lz4`.
+2. Download **[GameArchiveManager-0.1.0-RC1.zip](https://github.com/HypnosysNyx/GameArchiveManager/releases/download/v0.1.0-rc1/GameArchiveManager-0.1.0-RC1.zip)** and unzip the **whole folder**. Do not copy the `.exe` alone.
+3. Double-click `GameArchiveManager.exe`. You do not need Python. If 7-Zip was just installed, **restart this program** so it can see `7z.exe`.
+4. Startup should show `0.1.0` / `Release Candidate` and `7-Zip: 可用` (or FOUND).
+5. Drag a **folder** (or one archive file) onto the black window, or paste the path, then Enter.
+6. Read the preview. Type `Y` then Enter to run, `N` to cancel.
+7. Results appear in that folder as `GameArchive_Output`. Press Enter to do another path. `Q` quits.
+
+### Passwords
+
+**Automatic:** next to the archive, create an **empty folder whose name is the password** (Chinese names are fine). The program tries that name. It does not use ordinary file names as passwords.
+
+**Manual:** when automatic tries fail:
+
+- `I` — type a password (it **is shown** on screen so any IME works). Not written to logs, reports, or history.
+- `S` — skip this archive
+- `C` — cancel the whole task
+
+A password that actually worked is reused for later archives in the **same running window only**.
+
+### Commands
+
+| Input | Meaning |
+| --- | --- |
+| path / drag-drop | Start a task (quotes around paths with spaces are stripped) |
+| `Y` / `N` | Confirm or cancel after preview |
+| `M` | Full menu: `1` new/batch tasks, `2` last result, `3` tools, `4` settings, `0` back |
+| `Q` | Quit |
+| `Ctrl+C` | Interrupt the current task; source files stay; leftover temp dirs may be kept as `ORPHANED_TEMP`. Next run does not treat those as new archives |
+
+If several game roots look equally valid, the program asks which ones to keep.
+
+---
+
+## Tools (how auto-detect works)
+
+At **startup** it looks, in order: `config.json` path → `tools\7z.exe` (or one subfolder) beside the EXE → `C:\Program Files\7-Zip\7z.exe` → Windows PATH. Same idea for `Rar.exe` and `lz4.exe`.
+
+Install 7-Zip, then restart GameArchiveManager. A 32-bit 7-Zip under `Program Files (x86)` is **not** searched; use the 64-bit installer or put `7z.exe` in this program’s `tools\` folder.
+
+Missing tools do not crash the app; that job fails with `TOOL_NOT_FOUND`.
+
+---
+
+## Output locations
+
+| What | Where |
+| --- | --- |
+| Final files | `<your task folder>\GameArchive_Output` (then `_2`, `_3` if you run again) |
+| Logs / history | `%LOCALAPPDATA%\GameArchiveManager\` |
+| Optional config | EXE folder `config.json`, else `%LOCALAPPDATA%\GameArchiveManager\config.json` |
+
+The program never writes logs into the EXE folder. It never auto-creates `config.json`. Fields: [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md).
+
+---
 
 ## Run from source
 
-Windows 10/11, Python 3.10+, `py` launcher. No third-party pip packages (`requirements.txt` is empty).
+Windows 10/11, Python 3.10+, `py`. No pip packages.
 
 ```powershell
 py main.py
 ```
 
-Or double-click `start_game_archive_manager.bat`.
+Or `start_game_archive_manager.bat`. Same CLI as the EXE. Tests: `py -B -m unittest discover -s tests -v`.
 
-Paste or drop a file/folder path at the first prompt; `M` opens the menu; `Q` quits. Real extraction needs a discovered 7-Zip, WinRAR CLI, or LZ4 install.
-
-Optional config: [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md). Logs and history default to `%LOCALAPPDATA%\GameArchiveManager`.
-
-## Tests
-
-```powershell
-py -B -m unittest discover -s tests -v
-py scripts/verify_project_state.py
-py scripts/rc_readiness.py
-```
-
-See `project_state.json` for the test baseline (minimum 224; last verified 228). After the Win11 VM gate, `rc_readiness.py` should report **GO** (Windows 10 still optional).
-
-## RC build
-
-[`docs/RC_BUILD_NOTES.md`](docs/RC_BUILD_NOTES.md) and [`docs/RC_SMOKE_TEST.md`](docs/RC_SMOKE_TEST.md). Copy the full onedir; never ship the EXE alone.
-
-## Docs
-
-- Status: [`docs/CURRENT_STATUS.md`](docs/CURRENT_STATUS.md)
-- Handoff: [`GROK_START_HERE.md`](GROK_START_HERE.md)
-- User guide: [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md)
-- Known issues: [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md)
+---
 
 ## License
 
-Source is [MIT](LICENSE). 7-Zip, WinRAR, and LZ4 keep their own licenses on whatever binaries you install.
+Source is [MIT](LICENSE). 7-Zip, WinRAR, and LZ4 stay under their own licenses. The official LZ4 CLI is GPL-2.0-or-later; this repo does not ship `lz4.exe`.
+
+More docs: [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) · [`docs/CURRENT_STATUS.md`](docs/CURRENT_STATUS.md) · [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md)
 
 ---
 
 # GameArchiveManager (中文)
 
-Windows 游戏资源包整理工具：按真实文件头识别格式，递归解压，有限密码尝试，安全交付最终内容。
+面向 Windows 的**游戏下载资源包**整理工具：不看扩展名、看真实文件头，递归解开层层包装，有限次数试密码，把真正的游戏（或普通内容）安全复制出来。
 
-**当前版本：0.1.0 Release Candidate。不是正式 Release。**  
-干净 Windows 11 虚拟机门禁已通过。Windows 10 仍为可选未测。
+它**不是**游戏存档管理器，**没有**图形界面，也**不能代替** 7-Zip。请先自己安装 7-Zip；本程序负责判断解什么、留下什么。
 
-### 打包版怎么用（不用 Python）
+**当前版本：0.1.0 Release Candidate（候选版，不是正式版）。**  
+干净 Windows 11 验证已通过。Windows 10 未测。
 
-1. 先装 [7-Zip](https://www.7-zip.org/)。解 RAR 再装 WinRAR。`.lz4` 需要把 `lz4.exe` 放到 EXE 同级 `tools\`。
-2. 从 [Releases](https://github.com/HypnosysNyx/GameArchiveManager/releases) 下载 onedir 压缩包（发布后），或复制整个 `GameArchiveManager-0.1.0-RC1` 文件夹。不要只拷一个 EXE。
-3. 双击 `GameArchiveManager.exe`。
-4. 把文件夹或压缩包拖进黑窗口（或粘贴路径）回车，确认时输入 `Y`。结果在该文件夹下的 `GameArchive_Output`。
-5. 要密码时：输入 `I`，直接打密码（会显示，中文输入法可用）。密码不会写入日志、报告或 history。`S` 跳过，`C` 取消，`Q` 退出。
+[下载 Windows 压缩包（不用 Python）](https://github.com/HypnosysNyx/GameArchiveManager/releases/tag/v0.1.0-rc1)
 
-程序不修改源压缩包，也不捆绑 7-Zip / WinRAR / LZ4。
+## 介绍
 
-## 能做什么
+网上的游戏资源经常是：假后缀、套了多层压缩、分卷、JPEG 里藏 RAR、带密码、里面还有安卓包或 Office 文件。直接用 7-Zip 全解开，容易得到一堆技术目录，或把不该拆的 APK 拆开。
 
-- 不信扩展名：ZIP / RAR / 7Z / LZ4、伪装、JPEG 内嵌 RAR、分卷
-- 递归解压与复合包装（例如 LZ4→RAR）
-- 自动密码候选 + 交互 CLI 人工补密（明文不进日志 / 报告 / history）
-- 交付游戏根或 Generic Content，而不是把中间目录当成品
-- 不修改源文件、不覆盖旧输出、不按名字乱删用户目录
+本程序会：
 
-## 不包含
+1. 扫描你给出的文件夹或单个压缩包  
+2. 按文件头识别 ZIP / RAR / 7Z / LZ4  
+3. 把分卷当成一套、缺卷就停  
+4. 递归解开包装层（例如 `.rar.lz4`）  
+5. 用旁边空文件夹的名字自动试密码，不行再让你输入  
+6. 把「游戏根目录」或「普通内容」拷到 `GameArchive_Output`  
+7. 源压缩包原样不动，旧结果不被覆盖  
 
-- 不捆绑 7-Zip、WinRAR、LZ4 可执行文件（请自行合法安装或在 `config.json` 里写路径）
-- 不自动下载/安装外部工具
-- 当前没有 GUI
+## 小白怎么用（推荐）
 
-LZ4 官方 CLI 是 GPL-2.0-or-later，本仓库不附带 `lz4.exe`。
+1. 安装 64 位 [7-Zip](https://www.7-zip.org/)，装到默认位置。  
+   **只要这一个软件就够解 ZIP、RAR、7Z。** 不必为了 RAR 再装 WinRAR。只有 `.lz4` 才需要另备 `lz4.exe`。  
+2. 打开 [Releases](https://github.com/HypnosysNyx/GameArchiveManager/releases/tag/v0.1.0-rc1)，下载 `GameArchiveManager-0.1.0-RC1.zip`。  
+3. 解压后保留**整个文件夹**（里面有 `GameArchiveManager.exe` 和 `_internal`）。不要只拷一个 exe。  
+4. 双击 `GameArchiveManager.exe`。刚装完 7-Zip 的话，请先关掉本程序再开一次，才会识别到。  
+5. 启动时应看到版本 `0.1.0`、`Release Candidate`，以及 7-Zip 状态为「可用」。  
+6. 把「游戏压缩包所在的文件夹」拖进黑窗口（或粘贴路径）回车。  
+7. 预览后输入 `Y` 回车开始。结果在该文件夹下的 `GameArchive_Output`。  
+8. 按 Enter 可以继续处理下一个路径。输入 `Q` 退出。
 
-## 运行（源码）
+## 全部功能说明
 
-要求：Windows 10/11，Python 3.10+，启动器 `py`。无第三方 pip 依赖。
+### 启动与日常操作
+
+| 你输入 | 作用 |
+| --- | --- |
+| 路径 / 拖放文件或文件夹 | 直接开始任务（带空格的路径若被包上英文引号，会自动去掉） |
+| `Y` / `N` | 预览后确认执行 / 取消本次（不退出程序） |
+| `M` | 打开完整菜单 |
+| 菜单 `1` | 新建任务，可连续输入**多个路径**（批量）；空行开始预览 |
+| 菜单 `2` | 查看本窗口内最近一次任务报告 |
+| 菜单 `3` | 查看 7-Zip / WinRAR / LZ4 是否找到 |
+| 菜单 `4` | 查看当前已加载的设置（改 `config.json` 后要重启才生效） |
+| 菜单 `0` | 返回路径输入 |
+| `Q` | 退出程序 |
+| `Ctrl+C` | 中断当前任务。源文件不变；可能留下标记为 `ORPHANED_TEMP` 的临时目录。下次运行不会把这些临时目录当成新压缩包 |
+
+若识别出多个都像「最终游戏」的目录，会让你选择保留哪几个。
+
+### 识别与解压
+
+- **不信扩展名**：`.jpg` 其实是 ZIP、JPEG 图片后面藏 RAR，都会按真实格式处理。  
+- **支持**：ZIP、RAR、7Z；LZ4 需本机有 `lz4.exe`。  
+- **分卷**：`xxx.7z.001` + `.002`，或 `xxx.part01.rar` + `part02`，只生成一个任务。缺第二卷会在解压前失败（`VOLUME_DETECTION` / `MISSING_VOLUME`）。  
+- **套娃**：一层层解开直到游戏内容；例如 LZ4 包着 RAR。  
+- **复合包装**：外层和内层其实是同一内容时，只解该解的那一层，外层文件仍保留在原处。  
+
+RAR **优先用 7-Zip**；只有 7-Zip 解 RAR 失败时才尝试 WinRAR 的 `Rar.exe`（不是双击那个 WinRAR 窗口程序）。
+
+### 密码
+
+**自动（方便小白）：**  
+在压缩包旁边建一个**空文件夹**，文件夹的名字写成密码（可以中文）。把整个目录拖进程序，会自动拿文件夹名去试。不会把普通文件名当成密码。
+
+**手动：** 自动都失败后：
+
+- `I`：输入密码（**会显示在屏幕上**，中文输入法可直接打，不用切英文）。不会写入日志、报告、history。  
+- `S`：跳过这个加密包  
+- `C`：取消整次任务  
+
+解成功的密码只记在当前窗口内存里，关程序即消失。没有「记住密码」库。
+
+### 交到哪里、不会做什么
+
+- 最终结果：任务目录下的 `GameArchive_Output`。再跑一次会变成 `GameArchive_Output_2`，**不覆盖**旧结果。  
+- 中间解压目录（如 `某包_extracted`）是技术目录，不是成品。  
+- **不修改、不删除**你的源压缩包。  
+- **不按名字乱删**你的文件夹。  
+- 日志和历史：`%LOCALAPPDATA%\GameArchiveManager\`，不写在程序目录里。  
+
+### 特殊文件
+
+自动扫描时，下面这些即使底层是 ZIP 也**默认不拆**：APK、Word、Excel、PowerPoint、EPUB、JAR。  
+如果你把其中一个文件**单独拖进去当任务**，则按你的明确意图，可以按 ZIP 去解。
+
+默认**不会**因为名字带 Android / 安卓 / AZ 就跳过。若要跳过，需自己在 `config.json` 里把 `ignore_android` 或 `ignore_AZ` 设为 `true`。
+
+### 工具如何自动识别
+
+程序**启动时**按顺序找，不会在运行中途再扫硬盘：
+
+1. `config.json` 里写的路径  
+2. 程序目录 `tools\7z.exe` 或 `tools\某个子文件夹\7z.exe`  
+3. `C:\Program Files\7-Zip\7z.exe`  
+4. 系统 PATH  
+
+WinRAR 找 `C:\Program Files\WinRAR\Rar.exe`；LZ4 找 `tools\lz4.exe` 等。  
+装完 7-Zip 后必须**重启本软件**。32 位 7-Zip 装在 `Program Files (x86)` 时当前不会自动找到：请装 64 位，或把 `7z.exe` 放到本程序的 `tools\`。
+
+缺工具时程序不崩溃，该任务会提示未找到工具。
+
+### 可选配置
+
+一般不用建配置文件。需要时在 EXE 同目录放 `config.json`（优先），或放在 `%LOCALAPPDATA%\GameArchiveManager\config.json`。程序**不会**自动生成。完整字段见 [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md)。
+
+## 常见问题
+
+**预览完没解压？** 必须输入 `Y`。`N` 只取消这一次。  
+
+**提示找不到 7-Zip？** 确认已安装 64 位 7-Zip，关掉本程序再开。或把 `7z.exe` 放到 `tools\`。  
+
+**为什么出现 `_2`？** 防止覆盖上次的 `GameArchive_Output`。  
+
+**密码中文打不进去？** 请用本页下载的 RC1 包装（可见输入）。更旧的包会隐藏输入，中文输入法会失效。  
+
+**只有 WinRAR、没有 7-Zip？** 不够。zip/7z 不会走 WinRAR。请装 7-Zip。  
+
+## 源码运行
+
+Windows 10/11，Python 3.10+，`py`。没有 pip 依赖。
 
 ```powershell
 py main.py
 ```
 
-或双击 `start_game_archive_manager.bat`。
+或双击 `start_game_archive_manager.bat`。操作与打包版相同。
 
-首屏直接粘贴/拖入路径；`M` 菜单，`Q` 退出。真实解压需要本机已安装并被发现的 7-Zip / WinRAR CLI / LZ4。
+```powershell
+py -B -m unittest discover -s tests -v
+```
 
-可选配置见 [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md)。日志与 history 默认在 `%LOCALAPPDATA%\GameArchiveManager`。
+## 许可证
 
-## 测试与打包
-
-命令与英文部分相同。基线见 `project_state.json`。打包说明见 `docs/RC_BUILD_NOTES.md`。必须复制整个 onedir。
+源码 [MIT](LICENSE)。你自己安装的 7-Zip、WinRAR、LZ4 仍用它们自己的许可证。官方 LZ4 命令行是 GPL-2.0-or-later，本仓库不附带 `lz4.exe`。
