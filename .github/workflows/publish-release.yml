@@ -50,7 +50,7 @@ jobs:
           Source tag: $env:RELEASE_TAG
           Source commit: $sourceCommit
           Builder: GitHub Actions windows-latest, Python 3.12, PyInstaller 6.21.0
-          Executable: unsigned Windows x64 onedir pre-release build
+          Executable: unsigned Windows x64 onedir release-candidate build
           "@ | Set-Content -LiteralPath (Join-Path $releaseDir "BUILD_INFO.txt") -Encoding utf8
           Compress-Archive -LiteralPath $releaseDir -DestinationPath "$env:RELEASE_NAME.zip" -CompressionLevel Optimal
 

@@ -8,12 +8,12 @@
 - 版本：`0.1.0`
 - 构建类型：`Release Candidate`
 - 阶段：RC / Core Feature Freeze
-- 自动测试最低基线：224（当前已核验 228）
-- 本次交接前验证：224 tests / PASS；2026-08-24 源码核验 228 tests / PASS
+- 自动测试最低基线：224（当前已核验 234，其中 7 项因缺少可信 `lz4.exe` 跳过）
+- 本次交接前验证：234 tests / OK（skipped=7）
 - 项目治理校验：PASS
 - 真实样本 Test Game 1–6：项目状态记录为 PASS
-- Clean Windows 11 VM：`VERIFIED`（`clean_windows_11_vm=true`，EXE `9BFDE4CE…`）
-- 当前发布结论：Win11 门禁通过后 `rc_readiness.py` 预期 **GO**；仍是 0.1.0 Release Candidate，不是正式 Release
+- Clean Windows 11 VM：`NOT VERIFIED`（`clean_windows_11_vm=false`；旧 RC1 的通过记录不适用于安全加固后的 RC2）
+- 当前发布结论：RC2 已按仓库所有者确认公开并标记 GitHub Latest，但仍是 0.1.0 Release Candidate；在 Win11 门禁通过前，`rc_readiness.py` 保持 **NO-GO**，Latest 不等于稳定版验证通过
 - Windows 10 VM：可选，未验证
 
 `version.py` 是应用版本信息的唯一代码权威来源；`project_state.json` 是项目状态、测试基线和 Release Gate 的机器可读权威来源。不要把 RC 改成正式 Release，也不要把尚未完成的 VM 检查标成通过。
@@ -98,13 +98,9 @@ RC 构建物需要按 `docs/RC_BUILD_NOTES.md` 在目标环境重新生成或从
 
 ## 6. 当前已知构建证据
 
-最近一次本机 RC 验证构建记录：
+公开 RC2 构建的 ZIP/EXE SHA-256 以 GitHub Release 同时发布的 `GameArchiveManager-0.1.0-RC2.sha256` 为唯一权威来源，本文件不再复制具体值，避免资产替换后文档漂移。
 
-- RC ZIP SHA256：`90945C67D5FC4F2EF618D158E63A5D1815815872AB339A11F011CB12BA9ABF08`
-- RC EXE SHA256（2026-08-24 缺卷修复后重建）：`9BFDE4CE679EDF819AB4CB19E7E29FC6B4D5206134BA63D5739C6F87E27D0AD0`
-- 此前 2026-08-22 EXE SHA256：`F825C3859C85B1FDA9BE5809E1DB6BA447FC3478316870EEB2813F46AF472490`
-
-这些哈希仅用于识别此前测试过的构建，不表示 Clean Windows 11 VM Gate 已完成；本源码交接包不携带该二进制构建物。
+发布哈希只能证明下载内容与发布资产一致，不表示 Clean Windows 11 VM Gate 已完成；本源码交接包不携带该二进制构建物。
 
 ## 7. 接管报告格式
 

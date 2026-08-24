@@ -5,7 +5,7 @@ App version: `0.1.0`
 Build: `Release Candidate`  
 Test baseline: `py -B -m unittest discover -s tests -v` → `Ran 234 tests — OK (skipped=7)`
 Current P0: 无。`mixed_selected_and_ambiguous_content_silent_nondelivery`已完成自动与真实P0修复验证。  
-Current next action: 发布并试用包含隐私/安全审计修复的 RC2；安全修复后的干净 Win11/Win10 VM 复验待完成，不标正式 Release。
+Current next action: 试用已公开并标记 GitHub Latest 的 RC2；安全修复后的干净 Win11/Win10 VM 复验仍待完成，Latest 不代表稳定版门禁通过。
 
 ## Current baseline
 
@@ -85,5 +85,5 @@ Issue ID：`password_candidate_history_pollution`
 
 - `project_state.json`：schema v1，当前版本/构建/测试基线/P0/release gates已同步。
 - `scripts/verify_project_state.py`：最终结果见本次治理检查；schema、版本、文档、协议、密码泄漏、开发机路径、P0和不少于 `project_state.json` 已核验数量的自动测试必须一致。当前已核验 234 项。
-- `scripts/rc_readiness.py`：RC2 的 Win11 门禁未勾选，预期保持 **NO-GO**（可发布预发布包，但不可标正式 Release）。
+- `scripts/rc_readiness.py`：RC2 的 Win11 门禁未勾选，预期保持 **NO-GO**。仓库所有者确认将 RC2 标记为 GitHub Latest；该展示状态不改变 Release Candidate 身份，也不等于稳定版门禁通过。
 - Windows 10 VM当前为可选门禁，未验证不会单独阻止0.1.0 RC，但必须如实报告。

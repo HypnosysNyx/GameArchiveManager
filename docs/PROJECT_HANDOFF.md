@@ -138,8 +138,8 @@ RC 构建：
 py -m venv .build_venv
 & .\.build_venv\Scripts\python.exe -m pip install -r requirements-build.txt
 & .\.build_venv\Scripts\python.exe -m PyInstaller --noconfirm --clean GameArchiveManager.spec
-Copy-Item docs\RC_BUILD_NOTES.md dist\GameArchiveManager-0.1.0-RC1\
-Copy-Item docs\RC_SMOKE_TEST.md dist\GameArchiveManager-0.1.0-RC1\
+Copy-Item docs\RC_BUILD_NOTES.md dist\GameArchiveManager-0.1.0-RC2\
+Copy-Item docs\RC_SMOKE_TEST.md dist\GameArchiveManager-0.1.0-RC2\
 ```
 
 已存在 onedir RC 构建和 ZIP；打包版不要求 VM 安装 Python。日志/history 默认写入 `%LOCALAPPDATA%\GameArchiveManager`，最终内容写入任务根的 `GameArchive_Output`。

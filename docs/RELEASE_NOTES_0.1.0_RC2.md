@@ -1,6 +1,6 @@
 # GameArchiveManager 0.1.0 RC2
 
-Security and privacy hardening pre-release.
+Latest public RC2 build with security and privacy hardening.
 
 ## Security fixes
 
@@ -24,9 +24,9 @@ Security and privacy hardening pre-release.
 - Windows onedir build and non-interactive startup/exit smoke test: PASS on the build machine.
 - The executable is not Authenticode signed. Verify the published SHA-256 checksum before running it.
 
-## Pre-release limitations
+## Release-candidate limitations
 
-- This is a pre-release, not a stable release.
+- RC2 remains a release-candidate build. It is marked GitHub Latest by owner confirmation, but that label does not mean the clean-VM stability gate has passed.
 - The security-hardened RC2 build has not yet been revalidated on a clean Windows 11 or Windows 10 VM.
 - RAR/7Z archives whose directory headers are encrypted cannot receive full pre-extraction member inspection until a correct password is available; default quotas and post-extraction checks still apply.
 - LZ4 end-to-end tests require a separately installed trusted `lz4.exe` and were skipped in this build environment.
