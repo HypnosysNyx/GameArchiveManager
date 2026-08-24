@@ -3,7 +3,17 @@
 Windows tool for game archive recovery: identify real formats from file headers, extract recursively, try a limited set of passwords, and deliver final content safely.
 
 **Current version: 0.1.0 Release Candidate. This is not a stable Release.**  
-The clean Windows 11 VM gate is `true`. Windows 10 remains optional and unverified. This is still not a stable Release.
+The clean Windows 11 VM gate is `true`. Windows 10 remains optional and unverified.
+
+### Use the Windows build (no Python)
+
+1. Install [7-Zip](https://www.7-zip.org/). For RAR, install WinRAR too. For `.lz4`, put `lz4.exe` in a `tools` folder next to the EXE.
+2. Download the onedir zip from [Releases](https://github.com/HypnosysNyx/GameArchiveManager/releases) when published, or copy the whole `GameArchiveManager-0.1.0-RC1` folder. Never copy the EXE alone.
+3. Double-click `GameArchiveManager.exe`.
+4. Drag a folder or archive onto the console (or paste its path) and press Enter. Type `Y` to confirm. Output is `GameArchive_Output` inside that folder.
+5. If a password is needed: type `I`, switch the IME to English, type the password (it will not echo), Enter. `S` skips, `C` cancels, `Q` quits.
+
+This program does not modify your source archives. It does not bundle 7-Zip, WinRAR, or LZ4.
 
 [中文说明](#gamearchivemanager-中文)
 
@@ -69,7 +79,17 @@ Source is [MIT](LICENSE). 7-Zip, WinRAR, and LZ4 keep their own licenses on what
 Windows 游戏资源包整理工具：按真实文件头识别格式，递归解压，有限密码尝试，安全交付最终内容。
 
 **当前版本：0.1.0 Release Candidate。不是正式 Release。**  
-干净 Windows 11 虚拟机门禁已通过。Windows 10 仍为可选未测。这仍不是正式 Release。
+干净 Windows 11 虚拟机门禁已通过。Windows 10 仍为可选未测。
+
+### 打包版怎么用（不用 Python）
+
+1. 先装 [7-Zip](https://www.7-zip.org/)。解 RAR 再装 WinRAR。`.lz4` 需要把 `lz4.exe` 放到 EXE 同级 `tools\`。
+2. 从 [Releases](https://github.com/HypnosysNyx/GameArchiveManager/releases) 下载 onedir 压缩包（发布后），或复制整个 `GameArchiveManager-0.1.0-RC1` 文件夹。不要只拷一个 EXE。
+3. 双击 `GameArchiveManager.exe`。
+4. 把文件夹或压缩包拖进黑窗口（或粘贴路径）回车，确认时输入 `Y`。结果在该文件夹下的 `GameArchive_Output`。
+5. 要密码时：输入 `I`，输入法切英文，打密码回车（不回显是正常的）。`S` 跳过，`C` 取消，`Q` 退出。
+
+程序不修改源压缩包，也不捆绑 7-Zip / WinRAR / LZ4。
 
 ## 能做什么
 
