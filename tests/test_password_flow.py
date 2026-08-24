@@ -17,7 +17,7 @@ from task.models import Task
 from task.task_analyzer import AnalysisStatus, TaskAnalyzer
 
 
-TEST_TASK_PATH = Path(r"C:\Users\<redacted>\Documents\GAM_Test")
+TEST_TASK_PATH = Path.home() / "Documents" / "GAM_Test"
 MAX_PASSWORD_ATTEMPTS = 20
 
 

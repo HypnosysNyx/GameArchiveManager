@@ -103,16 +103,10 @@ NO-GO：显示 Development、正式 Release、其他版本号或空版本。
 
 ```powershell
 Get-ChildItem .\GameArchiveManager-0.1.0-RC1 -Recurse -File |
-    Select-String -SimpleMatch 'C:\Users\<redacted>
+    Select-String -SimpleMatch $env:USERPROFILE -ErrorAction SilentlyContinue
 ```
 
-预期无运行依赖命中。程序不应尝试访问：
-
-```text
-C:\Users\<redacted>
-GameArchiveManager0.1.0
-项目源码目录
-```
+预期无运行依赖命中。程序不应尝试访问构建机用户目录、`GameArchiveManager0.1.0` 或项目源码目录。
 
 ## 4. 无外部工具
 

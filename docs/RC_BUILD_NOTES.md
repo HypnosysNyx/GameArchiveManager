@@ -171,7 +171,7 @@ OK
 
 1. 无任务输入启动并输入 `Q`：退出码 0，显示 `0.1.0 / Release Candidate`。
 2. 构建产物不包含 `7z.exe`、`Rar.exe`、`WinRAR.exe` 或 `lz4.exe`。
-3. EXE 和 `_internal` 运行文件未发现 `C:\Users\<redacted>
+3. EXE 和 `_internal` 运行文件未发现当前开发机用户目录、`GameArchiveManager0.1.0` 或源码目录依赖字符串。
 4. PyInstaller warning 仅包含 Windows 下预期的 POSIX/Java/VMS 条件模块，没有发现项目业务模块缺失。
 5. 当前 onedir 共 19 个文件，约 16.6 MB。
 
@@ -182,7 +182,7 @@ OK
 在复制测试文档前，对 EXE 和 `_internal` 运行时二进制目录执行 ASCII 扫描：
 
 ```text
-C:\Users\<redacted>
+<developer user profile>   NO_MATCH
 GameArchiveManager0.1.0    NO_MATCH
 GameArchiveManager\        NO_MATCH
 ```

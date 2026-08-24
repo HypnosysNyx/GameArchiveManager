@@ -154,7 +154,7 @@ class ProjectGovernanceTests(unittest.TestCase):
             cache = root / "config" / "__pycache__"
             cache.mkdir(parents=True)
             (cache / "settings.pyc").write_bytes(
-                b"binary\x00C:\\Users\\<redacted>\\source"
+                b"binary\x00" + str(Path.home()).encode("utf-8") + b"\\source"
             )
             result = ProjectVerifier(root, state_path).check_developer_paths()
             self.assertEqual(result.status, CheckStatus.PASS)

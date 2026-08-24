@@ -292,7 +292,7 @@ class ProjectVerifier:
         return CheckResult("password_leak", CheckStatus.PASS, "No obvious persisted password pattern")
 
     def check_developer_paths(self) -> CheckResult:
-        marker = "C:\\Users\\<redacted>".casefold()
+        marker = str(Path.home()).casefold()
         candidates = [self.state_path, self.root / "GameArchiveManager.spec"]
         text_suffixes = {".py", ".json", ".toml", ".ini", ".cfg", ".txt"}
         for directory in (self.root / "config", self.root / "application"):

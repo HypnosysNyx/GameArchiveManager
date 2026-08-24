@@ -99,7 +99,7 @@ C:\Users\<redacted>\Documents\GameArchiveManager0.1.0
 
 这是 Junction/目录映射，不是两个不同代码版本。`Path.resolve()` 或工具状态可能显示实际目标路径。
 
-当前目录虽然存在 `.git` 名称，但 `git status` 报告“not a git repository”；不要假设存在可用 Git 历史。
+公开快照使用真实 git 仓库；不要把本地运行日志、VM 门禁材料或第三方解压工具二进制提交进库。
 
 ### 运行、测试和构建
 
