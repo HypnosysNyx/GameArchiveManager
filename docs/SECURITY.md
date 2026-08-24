@@ -18,7 +18,7 @@ ArchiveSafetyChecker 使用 `max_archive_size_mb` 限制单个压缩包大小。
 
 ## 解压前内容检查
 
-ArchiveContentInspector 当前使用 Python 标准库读取 ZIP 的：
+ArchiveContentInspector 使用 Python 标准库读取 ZIP，并在 7-Zip 可用时通过只读 `list` 模式读取 RAR/7Z 的：
 
 - 文件数量
 - ZIP 元数据声明的预计解压大小
@@ -27,7 +27,7 @@ ArchiveContentInspector 当前使用 Python 标准库读取 ZIP 的：
 
 ArchiveSafetyChecker 使用 `max_extracted_files` 和 `max_total_extracted_size_mb` 判断是否生成可执行计划。危险内部路径会直接阻断。
 
-当前不能可靠读取 RAR 和 7Z 的内部目录，只会记录能力警告并继续原有流程。ZIP 元数据也可能被恶意伪造，所以解压前检查不能代替解压后检查。
+RAR/7Z 列表命令固定使用空密码，不会提示或把用户密码放入命令行；如果归档目录本身加密，则在获得正确密码前只能记录能力警告，随后仍依赖外部工具和解压后检查。任何格式的元数据都可能损坏或被恶意构造，所以解压前检查不能代替解压后检查。
 
 ## 解压执行保护
 
@@ -47,7 +47,7 @@ ExtractionSafetyChecker 在每次成功结果返回前检查：
 - 输出路径存在且为目录
 - 实际文件数量
 - 实际文件总大小
-- 目录符号链接不被递归跟随
+- 输出树中的文件/目录符号链接和 Windows reparse point 会被拒绝，不进入后续哈希或复制
 
 超过限制时，Coordinator 把该次操作标记为失败，但不会删除已经生成的文件。这意味着解压后检查可以发现问题，却不能避免问题文件在检查前占用磁盘。
 
@@ -59,6 +59,7 @@ ExtractionSafetyChecker 在每次成功结果返回前检查：
 - PasswordRetryExecutor 的执行记录只保存状态和原因，不保存对应密码。
 - HistoryStorage 对摘要中的常见密码表达进行遮盖。
 - GameLogger 对 `password=...`、`pwd=...`、中文密码表达和 7-Zip `-p...` 参数进行脱敏，并截断长消息。
+- SevenZipExtractor 通过重定向标准输入回答 7-Zip 密码提示，不把密码放入子进程命令行。
 - 当前没有数据库密码存储，Settings 的 `save_passwords` 尚未实现。
 
 ## 清理策略

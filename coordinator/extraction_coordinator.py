@@ -27,6 +27,7 @@ from recovery.password_recovery import PasswordRecoveryEngine
 from security.archive_content_inspector import ArchiveContentInspector
 from security.extraction_safety import ExtractionSafetyChecker
 from tools.models import ToolName
+from tools.tool_manager import ToolManager
 
 from coordinator.models import CoordinatorResult
 
@@ -79,7 +80,15 @@ class ExtractionCoordinator:
         self.extraction_safety_checker = (
             extraction_safety_checker or ExtractionSafetyChecker(active_settings)
         )
-        self.content_inspector = content_inspector or ArchiveContentInspector()
+        dispatcher_tool_manager = getattr(self.dispatcher, "tool_manager", None)
+        self.content_inspector = content_inspector or ArchiveContentInspector(
+            tool_manager=(
+                dispatcher_tool_manager
+                if isinstance(dispatcher_tool_manager, ToolManager)
+                else None
+            ),
+            timeout_seconds=min(active_settings.extraction_timeout_seconds, 30),
+        )
         self.composite_extractor = composite_extractor or CompositeExtractor(
             analyzer=self.analyzer,
             strategy=self.strategy,
@@ -120,9 +129,9 @@ class ExtractionCoordinator:
                 f"是否伪装={archive_info.is_fake_extension}"
             )
 
-            if archive_info.is_multi_volume:
+            if archive_info.is_multi_volume and archive_info.missing_volume_files:
                 content_info = None
-                steps.append("分卷压缩包跳过单文件内容预检查")
+                steps.append("分卷不完整，跳过内容预检查")
             else:
                 content_info = self.content_inspector.inspect(archive_info)
                 steps.append(

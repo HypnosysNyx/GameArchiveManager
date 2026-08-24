@@ -7,7 +7,7 @@ from version import APP_NAME, APP_VERSION, BUILD_TYPE
 if BUILD_TYPE != "Release Candidate":
     raise RuntimeError("RC build requires BUILD_TYPE='Release Candidate'")
 
-release_directory = f"{APP_NAME}-{APP_VERSION}-RC1"
+release_directory = f"{APP_NAME}-{APP_VERSION}-RC2"
 
 a = Analysis(
     ["main.py"],

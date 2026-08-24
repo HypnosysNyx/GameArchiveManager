@@ -38,6 +38,7 @@ class Settings:
     # Archive safety：解压前限制单个压缩包大小。
     max_archive_size_mb: int = 10240
 
-    # 预留限制：None 表示第一版尚未启用对应检查。
-    max_extracted_files: int | None = None
-    max_total_extracted_size_mb: int | None = None
+    # 默认输出配额：处理不受信任归档时限制文件数量和磁盘占用。
+    # 用户仍可在 config.json 中显式设为 null 关闭对应限制。
+    max_extracted_files: int | None = 100000
+    max_total_extracted_size_mb: int | None = 102400

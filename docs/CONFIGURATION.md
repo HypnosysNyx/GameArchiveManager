@@ -23,8 +23,8 @@
   "max_password_attempts": 20,
   "extraction_timeout_seconds": 300,
   "max_archive_size_mb": 10240,
-  "max_extracted_files": null,
-  "max_total_extracted_size_mb": null,
+  "max_extracted_files": 100000,
+  "max_total_extracted_size_mb": 102400,
   "ignore_android": false,
   "ignore_AZ": false,
   "seven_zip_path": null,
@@ -46,8 +46,8 @@ JSON 不支持注释。字段名称区分大小写，例如 `ignore_AZ` 中的 `
 | `max_password_attempts` | 0～100 整数 | `20` | 单个密码恢复流程的最大候选尝试次数 |
 | `extraction_timeout_seconds` | 正整数 | `300` | 单次外部解压工具调用及相关受限验证的超时秒数 |
 | `max_archive_size_mb` | 非负整数 | `10240` | 单个输入压缩包的大小上限，单位为 MiB（1024×1024 字节） |
-| `max_extracted_files` | 非负整数或 `null` | `null` | ZIP 预计文件数和实际输出文件数上限；`null` 表示不启用 |
-| `max_total_extracted_size_mb` | 非负整数或 `null` | `null` | ZIP 预计总大小和实际输出总大小上限；`null` 表示不启用 |
+| `max_extracted_files` | 非负整数或 `null` | `100000` | ZIP 预计文件数和所有格式实际输出文件数上限；`null` 表示显式关闭 |
+| `max_total_extracted_size_mb` | 非负整数或 `null` | `102400` | ZIP 预计总大小和所有格式实际输出总大小上限；`null` 表示显式关闭 |
 | `ignore_android` | 布尔值 | `false` | 设为 `true` 时才忽略名称包含 Android 或安卓的内容；默认保留 |
 | `ignore_AZ` | 布尔值 | `false` | 设为 `true` 时才忽略内容相对路径组件中的明确AZ标签token；默认保留，且不匹配普通英文单词内部的az |
 | `seven_zip_path` | 字符串路径或 `null` | `null` | 7-Zip 可执行文件路径；相对路径按 config.json 所在目录解析 |

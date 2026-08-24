@@ -1165,6 +1165,12 @@ class GameArchiveIntegrationTests(unittest.TestCase):
             self.assertEqual(settings, Settings())
             self.assertFalse(config_path.exists())
 
+    def test_default_settings_enable_extracted_output_quotas(self) -> None:
+        settings = Settings()
+
+        self.assertEqual(settings.max_extracted_files, 100000)
+        self.assertEqual(settings.max_total_extracted_size_mb, 102400)
+
     def test_config_loader_warns_and_ignores_invalid_values(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             config_path = Path(temp_dir) / "config.json"
@@ -1606,6 +1612,80 @@ class GameArchiveIntegrationTests(unittest.TestCase):
             self.assertFalse(plan.can_execute)
             self.assertIn("不安全路径", plan.message)
 
+    def test_seven_zip_listing_blocks_unsafe_rar_or_7z_entries(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            archive_path = Path(temp_dir) / "unsafe.7z"
+            archive_path.write_bytes(b"7z\xbc\xaf\x27\x1cplaceholder")
+            archive_info = ArchiveAnalyzer().analyze(archive_path)
+            tool_manager = Mock()
+            tool_manager.get_tool_status.return_value = Mock(
+                available=True,
+                verified=True,
+                path=Path(temp_dir) / "7z.exe",
+            )
+            listing = (
+                "Path = safe.txt\n"
+                "Size = 4\n"
+                "Attributes = A\n\n"
+                "Path = ../outside.txt\n"
+                "Size = 6\n"
+                "Attributes = A\n\n"
+                "Path = linked.txt\n"
+                "Size = 0\n"
+                "Attributes = A\n"
+                "Symbolic Link = ../secret.txt\n"
+            )
+
+            with patch(
+                "security.archive_content_inspector.subprocess.run",
+                return_value=Mock(returncode=0, stdout=listing, stderr=""),
+            ):
+                content_info = ArchiveContentInspector(
+                    tool_manager=tool_manager
+                ).inspect(archive_info)
+
+            plan = ExecutionStrategy().create_plan(archive_info, content_info)
+            self.assertEqual(content_info.file_count, 3)
+            self.assertEqual(content_info.estimated_size, 10)
+            self.assertFalse(plan.can_execute)
+            self.assertTrue(
+                any("父目录穿越" in warning for warning in content_info.warnings)
+            )
+            self.assertTrue(
+                any("链接条目" in warning for warning in content_info.warnings)
+            )
+
+    def test_encrypted_7z_header_listing_falls_back_without_password_leak(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            archive_path = Path(temp_dir) / "encrypted.7z"
+            archive_path.write_bytes(b"7z\xbc\xaf\x27\x1cplaceholder")
+            archive_info = ArchiveAnalyzer().analyze(archive_path)
+            tool_manager = Mock()
+            tool_manager.get_tool_status.return_value = Mock(
+                available=True,
+                verified=True,
+                path=Path(temp_dir) / "7z.exe",
+            )
+
+            with patch(
+                "security.archive_content_inspector.subprocess.run",
+                return_value=Mock(
+                    returncode=2,
+                    stdout="",
+                    stderr="Cannot open encrypted archive. Wrong password?",
+                ),
+            ) as process_run:
+                content_info = ArchiveContentInspector(
+                    tool_manager=tool_manager
+                ).inspect(archive_info)
+
+            command = process_run.call_args.args[0]
+            self.assertIn("-p-", command)
+            self.assertEqual(content_info.file_count, 0)
+            self.assertTrue(
+                any("获得正确密码前" in warning for warning in content_info.warnings)
+            )
+
     def test_archive_content_inspector_applies_estimated_limits(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             archive_path = Path(temp_dir) / "large_content.zip"
@@ -1694,6 +1774,33 @@ class GameArchiveIntegrationTests(unittest.TestCase):
             self.assertTrue(large_file.exists())
             self.assertIn("总大小超过限制", result.reasons[0])
 
+    def test_extraction_safety_rejects_file_symlink(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            output_path = root / "output"
+            output_path.mkdir()
+            linked_file = output_path / "linked-secret.txt"
+            linked_file.write_text("simulated link target", encoding="utf-8")
+
+            with patch.object(
+                ExtractionSafetyChecker,
+                "_is_link_or_reparse_point",
+                side_effect=lambda path: Path(path).name == linked_file.name,
+            ):
+                result = ExtractionSafetyChecker().check(output_path)
+
+            self.assertFalse(result.safe)
+            self.assertTrue(
+                any("文件符号链接或重解析点" in reason for reason in result.reasons)
+            )
+
+    def test_extraction_safety_recognizes_windows_reparse_attribute(self) -> None:
+        path = Mock()
+        path.is_symlink.return_value = False
+        path.lstat.return_value = Mock(st_file_attributes=0x400)
+
+        self.assertTrue(ExtractionSafetyChecker._is_link_or_reparse_point(path))
+
     def test_platform_filter_skips_archive_in_android_directory(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             archive = Path(temp_dir) / "Android" / "data.zip"
@@ -1750,6 +1857,43 @@ class GameArchiveIntegrationTests(unittest.TestCase):
                 (plan.output_path / "hello.txt").read_text(encoding="utf-8"),
                 "hello integration",
             )
+
+    def test_seven_zip_password_uses_stdin_not_process_arguments(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            archive_path = root / "protected.7z"
+            archive_path.write_bytes(b"7z\xbc\xaf\x27\x1cplaceholder")
+            tool_path = root / "7z.exe"
+            tool_path.write_bytes(b"placeholder")
+            tool_manager = Mock()
+            tool_manager.get_tool_status.return_value = Mock(
+                available=True,
+                verified=True,
+                path=tool_path,
+            )
+            plan = ExtractionPlan(
+                archive_path=archive_path,
+                detected_format="7Z",
+                selected_tool=ToolName.SEVEN_ZIP,
+                output_path=root / "protected_extracted",
+            )
+            password = "中文测试密码"
+            completed = Mock(returncode=0, stdout="", stderr="")
+
+            with patch(
+                "extractor.seven_zip.subprocess.run", return_value=completed
+            ) as process_run:
+                result = SevenZipExtractor(tool_manager=tool_manager).extract(
+                    plan, password=password
+                )
+
+            self.assertTrue(result.success)
+            command = process_run.call_args.args[0]
+            self.assertNotIn(password, " ".join(command))
+            self.assertFalse(any(argument.startswith("-p") for argument in command))
+            self.assertIn("-sccUTF-8", command)
+            self.assertEqual(process_run.call_args.kwargs["input"], f"{password}\n")
+            self.assertEqual(process_run.call_args.kwargs["encoding"], "utf-8")
 
     def test_lz4_extractor_returns_tool_not_found(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

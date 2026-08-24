@@ -1,6 +1,7 @@
 """解压完成后的只读输出目录安全检查。"""
 
 import os
+import stat
 from pathlib import Path
 
 from config.settings import Settings
@@ -34,8 +35,8 @@ class ExtractionSafetyChecker:
             )
 
         root_path = Path(output_path).expanduser()
-        if root_path.is_symlink():
-            reasons.append("输出目录是符号链接，无法安全验证实际范围")
+        if self._is_link_or_reparse_point(root_path):
+            reasons.append("输出目录是符号链接或重解析点，无法安全验证实际范围")
         root = root_path.resolve()
         if not root.exists():
             return ExtractionSafetyResult(
@@ -61,12 +62,19 @@ class ExtractionSafetyChecker:
             # 不跟随目录符号链接，避免统计到输出目录之外。
             for directory_name in directory_names.copy():
                 directory_path = current / directory_name
-                if directory_path.is_symlink():
+                if self._is_link_or_reparse_point(directory_path):
                     directory_names.remove(directory_name)
-                    warnings.append(f"未跟随目录符号链接: {directory_path}")
+                    reasons.append(
+                        f"输出包含目录符号链接或重解析点: {directory_path}"
+                    )
 
             for file_name in file_names:
                 file_path = current / file_name
+                if self._is_link_or_reparse_point(file_path):
+                    reasons.append(
+                        f"输出包含文件符号链接或重解析点: {file_path}"
+                    )
+                    continue
                 file_count += 1
                 try:
                     # lstat 不跟随文件符号链接。
@@ -94,6 +102,18 @@ class ExtractionSafetyChecker:
             warnings=warnings,
             reasons=reasons,
         )
+
+    @staticmethod
+    def _is_link_or_reparse_point(path: Path) -> bool:
+        """Reject links and Windows reparse points before later copy/hash steps."""
+        if path.is_symlink():
+            return True
+        try:
+            attributes = getattr(path.lstat(), "st_file_attributes", 0)
+        except OSError:
+            return False
+        reparse_flag = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+        return bool(attributes & reparse_flag)
 
     @staticmethod
     def _validate_limit(name: str, value: int | None) -> None:

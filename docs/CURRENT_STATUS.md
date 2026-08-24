@@ -1,17 +1,17 @@
-# Current Status
+# Current Status — 0.1.0 RC2
 
 Last verified: `2026-08-24`  
 App version: `0.1.0`  
 Build: `Release Candidate`  
-Test baseline: `py -B -m unittest discover -s tests -v` → `Ran 228 tests — OK`  
+Test baseline: `py -B -m unittest discover -s tests -v` → `Ran 234 tests — OK (skipped=7)`
 Current P0: 无。`mixed_selected_and_ambiguous_content_silent_nondelivery`已完成自动与真实P0修复验证。  
-Current next action: 试用包装 EXE `F5F2DD82…`（人工密码默认可见）。Win11 门禁证据对应上一包 `9BFDE4CE…`。Win10 可选未测。不标正式 Release。桌面旧包不覆盖。
+Current next action: 发布并试用包含隐私/安全审计修复的 RC2；安全修复后的干净 Win11/Win10 VM 复验待完成，不标正式 Release。
 
 ## Current baseline
 
 - 自动测试：`py -B -m unittest discover -s tests -v`
-- 当前实际结果：`Ran 228 tests — OK`。
-- 当前状态：0.1.0 Release Candidate；干净 Win11 VM 门禁已通过。Win10 可选未测。
+- 当前实际结果：`Ran 234 tests — OK (skipped=7)`。
+- 当前状态：0.1.0 RC2；自动化与本机构建验证通过，安全修复后的干净 Win11/Win10 VM 复验待完成。
 - 核心冻结：是。当前不是新功能扩展阶段。
 
 ## Resolved P0
@@ -29,7 +29,7 @@ Issue ID：`password_candidate_history_pollution`
 
 - 平台过滤已改为 opt-in：`ignore_android=False`、`ignore_AZ=False`。旧配置显式 `true` 仍然有效，INITIAL_SCAN/PIPELINE_SCAN都使用同一 Settings。
 - `apk_content_container_recursive_unpack`：RESOLVED。ArchiveAnalyzer 仍如实报告 ZIP；ArchiveFinder 在自动创建任务前共享 ContainerRolePolicy。APK/Office/EPUB/JAR 默认保留，显式文件输入可覆盖。
-- clean Windows 11 VM smoke test：PASS（2026-08-24，EXE `9BFDE4CE…`）。Windows 10 仍为可选未测。
+- clean Windows 11 VM smoke test：旧 RC1 曾 PASS；RC2 因安全代码与构建内容发生变化，需要重新验证。Windows 10 仍为可选未测。
 - KI-P0-002已解决：独立PC与Android DeliveryUnits同时交付；真正竞争根保留现有选择闭环；未决唯一内容在非交互模式下保留并报告。
 - `cli_direct_path_entry_regression`已解决：首屏直接接受文件/目录路径，M进入辅助菜单，Q退出；成功、失败或取消后返回Fast Path。
 - `cli_startup_latency_regression`保留为NEEDS_REAL_ENVIRONMENT_VERIFICATION。开发机T1/T2约0.181秒、T3约0.000128秒，未采用lazy初始化。
@@ -37,7 +37,7 @@ Issue ID：`password_candidate_history_pollution`
 - NEXT-1人工密码恢复闭环已完成：非交互默认仍返回结构化失败；交互CLI支持安全输入、跳过和取消。
 - AZ平台过滤误判已解决：只接受明确ASCII token，并只检查任务内容根以下的相对组件；历史记录保留在`KNOWN_ISSUES.md`。
 - 历史 `RELEASE_CANDIDATE_REPORT.md` 仍保留当时的 `Development/103 tests` 证据；当前 RC 构建说明与基线以本文件、`RC_BUILD_NOTES.md` 和 `project_state.json` 为准。
-- Win11 门禁已通过，仍保持`BUILD_TYPE=Release Candidate`，不自动改成正式 Release。
+- RC2 的 Win11 门禁待重新验证，保持 `BUILD_TYPE=Release Candidate`，不自动改成正式 Release。
 
 ## Known real samples
 
@@ -84,6 +84,6 @@ Issue ID：`password_candidate_history_pollution`
 ## Governance health
 
 - `project_state.json`：schema v1，当前版本/构建/测试基线/P0/release gates已同步。
-- `scripts/verify_project_state.py`：最终结果见本次治理检查；schema、版本、文档、协议、密码泄漏、开发机路径、P0和不少于 `project_state.json` 已核验数量的自动测试必须一致。当前已核验 228 项。
-- `scripts/rc_readiness.py`：Win11 门禁已勾选后预期 **GO**（Win10 仍为 OPTIONAL / NOT VERIFIED）。
+- `scripts/verify_project_state.py`：最终结果见本次治理检查；schema、版本、文档、协议、密码泄漏、开发机路径、P0和不少于 `project_state.json` 已核验数量的自动测试必须一致。当前已核验 234 项。
+- `scripts/rc_readiness.py`：RC2 的 Win11 门禁未勾选，预期保持 **NO-GO**（可发布预发布包，但不可标正式 Release）。
 - Windows 10 VM当前为可选门禁，未验证不会单独阻止0.1.0 RC，但必须如实报告。

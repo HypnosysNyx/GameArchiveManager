@@ -1,11 +1,11 @@
-# GameArchiveManager 0.1.0 RC1 构建说明
+# GameArchiveManager 0.1.0 RC2 构建说明
 
 ## 构建身份
 
 - 应用名称：GameArchiveManager
 - 应用版本：0.1.0
 - 构建类型：Release Candidate
-- 构建标签：RC1
+- 构建标签：RC2
 - 当前重建日期：2026-08-24（Asia/Shanghai，可见密码 CLI）
 - 状态：试用 RC onedir；不是正式 Release
 
@@ -33,7 +33,7 @@ PyInstaller 官方说明 onedir 会生成一个包含 EXE 和运行依赖的目�
 
 ```text
 dist/
-└── GameArchiveManager-0.1.0-RC1/
+└── GameArchiveManager-0.1.0-RC2/
     ├── GameArchiveManager.exe
     ├── RC_BUILD_NOTES.md
     ├── RC_SMOKE_TEST.md
@@ -43,7 +43,7 @@ dist/
 主程序：
 
 ```text
-dist\GameArchiveManager-0.1.0-RC1\GameArchiveManager.exe
+dist\GameArchiveManager-0.1.0-RC2\GameArchiveManager.exe
 ```
 
 构建时 EXE SHA256：
@@ -90,8 +90,8 @@ pyinstaller==6.21.0
 py -m venv .build_venv
 & .\.build_venv\Scripts\python.exe -m pip install -r requirements-build.txt
 & .\.build_venv\Scripts\python.exe -m PyInstaller --noconfirm --clean GameArchiveManager.spec
-Copy-Item docs\RC_BUILD_NOTES.md dist\GameArchiveManager-0.1.0-RC1\
-Copy-Item docs\RC_SMOKE_TEST.md dist\GameArchiveManager-0.1.0-RC1\
+Copy-Item docs\RC_BUILD_NOTES.md dist\GameArchiveManager-0.1.0-RC2\
+Copy-Item docs\RC_SMOKE_TEST.md dist\GameArchiveManager-0.1.0-RC2\
 ```
 
 构建配置文件：`GameArchiveManager.spec`。

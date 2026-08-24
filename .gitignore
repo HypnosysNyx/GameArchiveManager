@@ -4,6 +4,10 @@ __pycache__/
 *.pyo
 .Python
 *.egg-info/
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
 
 # Local environments and PyInstaller
 .build_venv/
@@ -29,6 +33,15 @@ tools/lz4_win64_v1_10_0/
 
 # User / local config and outputs
 config.json
+task_history.json
+*.legacy.bak
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
 GameArchive_Output/
 .vscode/
 .idea/

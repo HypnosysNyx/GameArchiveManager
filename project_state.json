@@ -10,7 +10,7 @@
   "test_baseline": {
     "command": "py -B -m unittest discover -s tests -v",
     "minimum_test_count": 224,
-    "last_verified_count": 228,
+    "last_verified_count": 234,
     "last_verified_status": "PASS"
   },
   "current_priorities": {
@@ -89,7 +89,7 @@
   "release_gates": {
     "full_test_suite": true,
     "real_sample_regression": true,
-    "clean_windows_11_vm": true,
+    "clean_windows_11_vm": false,
     "clean_windows_10_vm": false,
     "source_file_integrity": true,
     "password_leak_check": true,

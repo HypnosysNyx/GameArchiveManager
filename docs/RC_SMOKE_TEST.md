@@ -1,4 +1,4 @@
-# GameArchiveManager 0.1.0 RC1 干净 Windows VM 冒烟测试
+# GameArchiveManager 0.1.0 RC2 干净 Windows VM 冒烟测试
 
 ## 测试目的
 
@@ -28,13 +28,13 @@
 复制整个目录，不能只复制 EXE：
 
 ```text
-GameArchiveManager-0.1.0-RC1\
+GameArchiveManager-0.1.0-RC2\
 ```
 
 在开发机交付记录中核对目录哈希或至少核对 EXE SHA256：
 
 ```powershell
-Get-FileHash .\GameArchiveManager-0.1.0-RC1\GameArchiveManager.exe -Algorithm SHA256
+Get-FileHash .\GameArchiveManager-0.1.0-RC2\GameArchiveManager.exe -Algorithm SHA256
 ```
 
 本次构建记录值：
@@ -102,7 +102,7 @@ NO-GO：显示 Development、正式 Release、其他版本号或空版本。
 在 VM 中搜索程序目录和 `%LOCALAPPDATA%\GameArchiveManager`：
 
 ```powershell
-Get-ChildItem .\GameArchiveManager-0.1.0-RC1 -Recurse -File |
+Get-ChildItem .\GameArchiveManager-0.1.0-RC2 -Recurse -File |
     Select-String -SimpleMatch $env:USERPROFILE -ErrorAction SilentlyContinue
 ```
 
@@ -160,8 +160,8 @@ C:\Program Files\WinRAR\Rar.exe
 RC 不捆绑 LZ4。使用来源与许可证均已确认的 `lz4.exe`，任选一种：
 
 ```text
-GameArchiveManager-0.1.0-RC1\tools\lz4.exe
-GameArchiveManager-0.1.0-RC1\tools\lz4_win64_v1_10_0\lz4.exe
+GameArchiveManager-0.1.0-RC2\tools\lz4.exe
+GameArchiveManager-0.1.0-RC2\tools\lz4_win64_v1_10_0\lz4.exe
 ```
 
 或在 `config.json` 中写绝对路径：

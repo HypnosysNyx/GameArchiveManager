@@ -129,18 +129,23 @@ class SevenZipExtractor:
                 "-aos",  # 双重保护：不覆盖同名文件。
                 "-y",
             ]
+            run_arguments = {
+                "capture_output": True,
+                "text": True,
+                "errors": "replace",
+                "check": False,
+                "timeout": self.process_timeout_seconds,
+            }
             if password is not None:
-                command.append(f"-p{password}")
+                # Let 7-Zip prompt on its redirected standard input instead of
+                # exposing the secret through the process command line.
+                command.append("-sccUTF-8")
+                run_arguments["input"] = f"{password}\n"
+                run_arguments["encoding"] = "utf-8"
+            else:
+                run_arguments["stdin"] = subprocess.DEVNULL
 
-            completed = subprocess.run(
-                command,
-                stdin=subprocess.DEVNULL,
-                capture_output=True,
-                text=True,
-                errors="replace",
-                check=False,
-                timeout=self.process_timeout_seconds,
-            )
+            completed = subprocess.run(command, **run_arguments)
         except subprocess.TimeoutExpired:
             return ExtractionResult(
                 success=False,
