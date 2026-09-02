@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "last_verified": "2026-08-24",
+  "last_verified": "2026-08-28",
   "project": {
     "name": "GameArchiveManager",
     "version": "0.1.0",
@@ -89,7 +89,7 @@
   "release_gates": {
     "full_test_suite": true,
     "real_sample_regression": true,
-    "clean_windows_11_vm": false,
+    "clean_windows_11_vm": true,
     "clean_windows_10_vm": false,
     "source_file_integrity": true,
     "password_leak_check": true,

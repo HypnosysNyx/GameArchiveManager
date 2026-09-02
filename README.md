@@ -2,12 +2,14 @@
 
 [![CI](https://github.com/HypnosysNyx/GameArchiveManager/actions/workflows/ci.yml/badge.svg)](https://github.com/HypnosysNyx/GameArchiveManager/actions/workflows/ci.yml) [![CodeQL](https://github.com/HypnosysNyx/GameArchiveManager/actions/workflows/codeql.yml/badge.svg)](https://github.com/HypnosysNyx/GameArchiveManager/actions/workflows/codeql.yml) [![Latest release](https://img.shields.io/github/v/release/HypnosysNyx/GameArchiveManager)](https://github.com/HypnosysNyx/GameArchiveManager/releases/latest) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
+Maintainers and AI agents: start with [`START_HERE.md`](START_HERE.md). Use the single canonical workspace documented there.
+
 Windows CLI tool for messy **game download archives**: it looks at real file headers (not the extension), unpacks nested wrappers, tries a limited set of passwords, and copies the actual game (or generic content) to a safe output folder.
 
 It is not a save-file manager, not a GUI, and not a replacement for 7-Zip. You still install 7-Zip; this program decides *what* to unpack and *what* to keep.
 
 **Current version: 0.1.0 RC2 (Release Candidate)** — not a stable release.  
-Automated tests and the Windows build smoke test passed. Clean Windows 10/11 VM revalidation for RC2 is still pending.
+Automated tests and the clean Windows 11 VM smoke test passed. Windows 10 remains optional and untested.
 
 **[Download this program](https://github.com/HypnosysNyx/GameArchiveManager/releases/download/v0.1.0-rc2/GameArchiveManager-0.1.0-RC2.zip)** · [SHA-256 checksums](https://github.com/HypnosysNyx/GameArchiveManager/releases/download/v0.1.0-rc2/GameArchiveManager-0.1.0-RC2.sha256) · [中文说明](#gamearchivemanager-中文)
 
@@ -115,7 +117,7 @@ Or `start_game_archive_manager.bat`. Same CLI as the EXE. Tests: `py -B -m unitt
 
 Source is [MIT](LICENSE). 7-Zip, WinRAR, and LZ4 stay under their own licenses. The official LZ4 CLI is GPL-2.0-or-later; this repo does not ship `lz4.exe`.
 
-More docs: [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) · [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md) · [`docs/SECURITY.md`](docs/SECURITY.md) · [`security audit`](docs/SECURITY_AUDIT_2026-08-24.md) · [`docs/CURRENT_STATUS.md`](docs/CURRENT_STATUS.md) · [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md)
+More docs: [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) · [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md) · [`docs/SECURITY.md`](docs/SECURITY.md) · [`security audit`](docs/SECURITY_AUDIT_2026-08-24.md) · [`release audit`](docs/RELEASE_AUDIT_2026-08-28.md) · [`docs/CURRENT_STATUS.md`](docs/CURRENT_STATUS.md) · [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md)
 
 Project policies: [`SECURITY.md`](SECURITY.md) · [`CONTRIBUTING.md`](CONTRIBUTING.md) · [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md)
 
@@ -128,7 +130,7 @@ Project policies: [`SECURITY.md`](SECURITY.md) · [`CONTRIBUTING.md`](CONTRIBUTI
 它**不是**游戏存档管理器，**没有**图形界面，也**不能代替** 7-Zip。请先自己安装 7-Zip；本程序负责判断解什么、留下什么。
 
 **当前版本：0.1.0 RC2 Release Candidate（候选版，不是正式版）。**  
-自动化测试和 Windows 构建冒烟测试已通过；RC2 的干净 Windows 10/11 虚拟机复验仍待完成。
+自动化测试和干净 Windows 11 虚拟机冒烟测试已通过；Windows 10 仍为可选未测试项。
 
 **[下载本程序](https://github.com/HypnosysNyx/GameArchiveManager/releases/download/v0.1.0-rc2/GameArchiveManager-0.1.0-RC2.zip)** · [SHA-256 校验文件](https://github.com/HypnosysNyx/GameArchiveManager/releases/download/v0.1.0-rc2/GameArchiveManager-0.1.0-RC2.sha256)
 

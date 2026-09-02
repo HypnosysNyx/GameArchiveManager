@@ -95,15 +95,16 @@
 - **Fix**：`max(indexed)==1` 时补下一卷（保留现有宽度：`part2` 或 `part02`）。完整 `part01+part02` 仍可执行。
 - **Do not fix by**：不要按扩展名猜测；不要把普通 `name.rar` 当成分卷；不要为过报告放宽 7z 缺卷规则。
 - **Regression coverage**：`part01` 缺卷不进 Extractor；`part1` 宽度匹配 `part2`；完整 `part01+part02` 可执行；既有 RAR/7z/zip 分卷分组；ApplicationService 报告 `VOLUME_DETECTION`/`MISSING_VOLUME`。完整 228 项通过。
-- **Remaining**：桌面 8/22 旧包未覆盖。Win10 可选未测。Win11 整包门禁已勾。
+- **Remaining**：桌面 8/22 旧包未覆盖。Win10 可选未测。当前 RC2 已验证此缺卷修复，整包 Win11 门禁已完成。
 
-### KI-P1-001：干净Windows VM尚未完成最终GO
+### KI-P1-001：干净 Windows VM 最终门禁
 
-- **Status**：RESOLVED for clean Windows 11（2026-08-24）；Windows 10 仍 OPTIONAL / NOT VERIFIED。
+- **Status**：RESOLVED for current RC2 on clean Windows 11（2026-08-28）；Windows 10 仍 OPTIONAL / NOT VERIFIED。
 - **Affected modules**：RC构建、runtime paths、ToolManager、配置、日志/history。
 - **Real sample**：测试游戏1～6中的可合法复制测试集合；RC 烟测夹具见 `.vm_gate` 记录。
-- **Win11 evidence**：EXE `9BFDE4CE…`；无 Python；工具发现；ZIP/RAR/7Z/LZ4；分卷含 RAR part01 缺卷；JPEG 内嵌；中文路径；人工密码；Ctrl+C 于 EXTRACTING/SCANNING/VALIDATING；源哈希不变；明文 0 hit。
-- **Remaining**：Win10 可选未测。桌面 8/22 旧包未覆盖。
+- **Win11 evidence**：当前 RC2 EXE `67DF840B…`（ZIP `BA3A9ADD…`）的清单 1–13、15–17 见 `../rc2_smoke_codex.md`；清单 14 已在 `Win11-Sandbox` GUI 会话中向 EXTRACTING、SCANNING、VALIDATING 三阶段发送真实 Ctrl+C 扫描码，应用均报告 `KeyboardInterrupt`、保留 `ORPHANED_TEMP`，源哈希不变且随后重跑成功，见 `../rc2_item14_codex.md`。旧 EXE `9BFDE4CE…` 与 `F5F2DD82…` 不作为当前门禁替代证据。
+- **Artifact note**：被测 ZIP 内附带的旧 Markdown 仍写有旧 EXE 哈希；实际 ZIP/EXE 哈希已由宿主 staging、VM 和三个字节一致的 ZIP 副本交叉确认。原始 ZIP 保持不变作为证据，源码权威文档已纠错。若以后重新打包，必须发布新 ZIP 哈希并确认 EXE 仍为 `67DF840B…`，不得把文档更新包装成原 ZIP 未变化。
+- **Remaining**：Win10 可选未测。桌面 8/22 旧包未覆盖。正式 Release 仍需单独完成发布清单和仓库所有者批准。
 - **Do not fix by**：不要因为 Win11 GO 就把 `BUILD_TYPE` 改成正式 Release；不要捆绑来源或许可未确认的外部工具。
 
 ### KI-P1-002：旧RC文档的历史基线已过时
@@ -112,7 +113,7 @@
 - **Affected modules**：`RELEASE_CANDIDATE_REPORT.md`、`RC_BUILD_NOTES.md`。
 - **Real sample**：不适用。
 - **Risk**：新接手者可能误认为当前仍是Development或只有103/107项测试。
-- **Current workaround**：以`CURRENT_STATUS.md`、`project_state.json`和当前实测为准；当前是0.1.0 Release Candidate、224项测试。
+- **Current workaround**：以`CURRENT_STATUS.md`、`project_state.json`和当前实测为准；当前是0.1.0 Release Candidate、234项测试。
 - **Do not fix by**：不要静默改写历史报告使其看起来当时就是当前状态；应保留历史并明确时间点。
 
 ### KI-P1-003：测试游戏4发布签字前需要重新真实回归
