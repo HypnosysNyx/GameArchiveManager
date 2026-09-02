@@ -23,7 +23,7 @@ from tools.tool_manager import ToolManager
 from version import APP_NAME, APP_VERSION, BUILD_TYPE
 
 
-class ReleaseCandidateBuildTests(unittest.TestCase):
+class ReleaseBuildTests(unittest.TestCase):
     def test_version_identity_is_consistent_in_report_history_and_log(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -49,7 +49,7 @@ class ReleaseCandidateBuildTests(unittest.TestCase):
 
             self.assertEqual(APP_NAME, "GameArchiveManager")
             self.assertEqual(APP_VERSION, "0.1.0")
-            self.assertEqual(BUILD_TYPE, "Release Candidate")
+            self.assertEqual(BUILD_TYPE, "Release")
             self.assertEqual(report.app_version, APP_VERSION)
             self.assertEqual(report.build_type, BUILD_TYPE)
             record = history.read_all()[0]

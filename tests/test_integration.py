@@ -696,7 +696,7 @@ class GameArchiveIntegrationTests(unittest.TestCase):
 
         self.assertEqual(APP_NAME, "GameArchiveManager")
         self.assertEqual(APP_VERSION, "0.1.0")
-        self.assertEqual(BUILD_TYPE, "Release Candidate")
+        self.assertEqual(BUILD_TYPE, "Release")
 
     def test_main_confirmation_executes_application_service(self) -> None:
         import main as main_module
@@ -1384,7 +1384,7 @@ class GameArchiveIntegrationTests(unittest.TestCase):
             output = stdout.getvalue()
             self.assertIn("GameArchiveManager", output)
             self.assertIn("版本: 0.1.0", output)
-            self.assertIn("构建类型: Release Candidate", output)
+            self.assertIn("构建类型: Release", output)
             for display_name, tool_path in (
                 ("7-Zip", tool_paths[ToolName.SEVEN_ZIP]),
                 ("WinRAR", tool_paths[ToolName.WINRAR]),

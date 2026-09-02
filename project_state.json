@@ -4,8 +4,8 @@
   "project": {
     "name": "GameArchiveManager",
     "version": "0.1.0",
-    "build_type": "Release Candidate",
-    "phase": "RC"
+    "build_type": "Release",
+    "phase": "Release"
   },
   "test_baseline": {
     "command": "py -B -m unittest discover -s tests -v",

@@ -8,20 +8,20 @@ Windows CLI tool for messy **game download archives**: it looks at real file hea
 
 It is not a save-file manager, not a GUI, and not a replacement for 7-Zip. You still install 7-Zip; this program decides *what* to unpack and *what* to keep.
 
-**Current version: 0.1.0 RC2 (Release Candidate)** — not a stable release.  
-Automated tests and the clean Windows 11 VM smoke test passed. Windows 10 remains optional and untested.
+**Current version: 0.1.0 Release.** The official local package has been built; publication is still pending.
+The new official package has not yet been smoke-tested on a clean Windows 11 VM. Windows 10 remains optional and untested.
 
-**[Download this program](https://github.com/HypnosysNyx/GameArchiveManager/releases/download/v0.1.0-rc2/GameArchiveManager-0.1.0-RC2.zip)** · [SHA-256 checksums](https://github.com/HypnosysNyx/GameArchiveManager/releases/download/v0.1.0-rc2/GameArchiveManager-0.1.0-RC2.sha256) · [中文说明](#gamearchivemanager-中文)
+The old RC2 ZIP remains an archived candidate package; do not treat it as the official 0.1.0 release. Official-package build details and checksums: [`docs/OFFICIAL_BUILD_0.1.0.md`](docs/OFFICIAL_BUILD_0.1.0.md). · [中文说明](#gamearchivemanager-中文)
 
 RC2 asset erratum: [`docs/RC2_ASSET_ERRATA.md`](docs/RC2_ASSET_ERRATA.md) — the original ZIP is unchanged; do not use the obsolete embedded EXE hash references.
 
-### Privacy and RC2 security note
+### Privacy and security note
 
 - The application has no network, telemetry, analytics, crash-report upload, or cloud-sync logic.
 - It processes only the file or directory you provide. A directory task recursively scans that selected tree.
 - Logs and history stay under `%LOCALAPPDATA%\GameArchiveManager`, but they contain full local paths and should be treated as private data.
-- Passwords are not persisted. Manual input is visible in the console; RC2 sends passwords to 7-Zip through redirected standard input instead of the process command line.
-- RC2 rejects extracted symbolic links and Windows reparse points before hashing or final delivery. The executable is unsigned; verify the published SHA-256 checksum before running it.
+- Passwords are not persisted. Manual input is visible in the console; the application sends passwords to 7-Zip through redirected standard input instead of the process command line.
+- The application rejects extracted symbolic links and Windows reparse points before hashing or final delivery. The executable is unsigned; verify the published SHA-256 checksum before running it.
 
 ---
 
@@ -48,9 +48,9 @@ Not included: GUI, bundling 7-Zip/WinRAR/LZ4, persistent password vault, deletin
 ## Windows build (for most users)
 
 1. Install 64-bit **[7-Zip](https://www.7-zip.org/)** to the default folder `C:\Program Files\7-Zip\`. That one tool is enough for ZIP, RAR, and 7Z. WinRAR is only a RAR fallback. LZ4 is only for `.lz4`.
-2. **[Download this program](https://github.com/HypnosysNyx/GameArchiveManager/releases/download/v0.1.0-rc2/GameArchiveManager-0.1.0-RC2.zip)** (`GameArchiveManager-0.1.0-RC2.zip`). Unzip the **whole folder**. Do not copy the `.exe` alone. The executable is unsigned, so verify the accompanying [SHA-256 checksums](https://github.com/HypnosysNyx/GameArchiveManager/releases/download/v0.1.0-rc2/GameArchiveManager-0.1.0-RC2.sha256).
+2. Obtain the official `GameArchiveManager-0.1.0.zip` once it is published. Until then, use the local-package build record in [`docs/OFFICIAL_BUILD_0.1.0.md`](docs/OFFICIAL_BUILD_0.1.0.md); do not use the archived RC2 ZIP as the official release. Unzip the **whole folder**. Do not copy the `.exe` alone. The executable is unsigned, so verify its SHA-256 before running it.
 3. Double-click `GameArchiveManager.exe`. You do not need Python. If 7-Zip was just installed, **restart this program** so it can see `7z.exe`.
-4. Startup should show `0.1.0` / `Release Candidate` and `7-Zip: 可用` (or FOUND).
+4. Startup should show `0.1.0` / `Release` and `7-Zip: 可用` (or FOUND).
 5. Drag a **folder** (or one archive file) onto the black window, or paste the path, then Enter.
 6. Read the preview. Type `Y` then Enter to run, `N` to cancel.
 7. Results appear in that folder as `GameArchive_Output`. Press Enter to do another path. `Q` quits.
@@ -131,20 +131,20 @@ Project policies: [`SECURITY.md`](SECURITY.md) · [`CONTRIBUTING.md`](CONTRIBUTI
 
 它**不是**游戏存档管理器，**没有**图形界面，也**不能代替** 7-Zip。请先自己安装 7-Zip；本程序负责判断解什么、留下什么。
 
-**当前版本：0.1.0 RC2 Release Candidate（候选版，不是正式版）。**  
-自动化测试和干净 Windows 11 虚拟机冒烟测试已通过；Windows 10 仍为可选未测试项。
+**当前版本：0.1.0 Release（正式版）。** 本机正式包已构建，尚未公开发布。
+新的正式包尚未在干净 Windows 11 虚拟机上完成冒烟测试；Windows 10 仍为可选未测试项。
 
-**[下载本程序](https://github.com/HypnosysNyx/GameArchiveManager/releases/download/v0.1.0-rc2/GameArchiveManager-0.1.0-RC2.zip)** · [SHA-256 校验文件](https://github.com/HypnosysNyx/GameArchiveManager/releases/download/v0.1.0-rc2/GameArchiveManager-0.1.0-RC2.sha256)
+旧 RC2 ZIP 仍是候选包存档，不能当作正式 0.1.0 发布包。正式包的本机构建信息与校验值见 [`docs/OFFICIAL_BUILD_0.1.0.md`](docs/OFFICIAL_BUILD_0.1.0.md)。
 
 RC2 勘误：[`docs/RC2_ASSET_ERRATA.md`](docs/RC2_ASSET_ERRATA.md)；原始 ZIP 保持不变，请勿使用其中已作废的旧 EXE 哈希引用。
 
-### 隐私与 RC2 安全说明
+### 隐私与安全说明
 
 - 应用没有网络通信、遥测、分析、崩溃上报或云同步逻辑。
 - 只处理用户提交的文件或目录；目录任务会递归扫描用户选择的目录树。
 - 日志和历史只保存在 `%LOCALAPPDATA%\GameArchiveManager`，但其中包含完整本地路径，应视为私人数据。
-- 密码不会持久化。手动密码会显示在控制台；RC2 通过重定向标准输入将密码传给 7-Zip，不再放入进程命令行。
-- RC2 会在哈希和最终交付前拒绝解压结果中的符号链接与 Windows reparse point。当前 EXE 未签名，运行前请核对发布的 SHA-256。
+- 密码不会持久化。手动密码会显示在控制台；程序通过重定向标准输入将密码传给 7-Zip，不再放入进程命令行。
+- 程序会在哈希和最终交付前拒绝解压结果中的符号链接与 Windows reparse point。当前 EXE 未签名，运行前请核对发布的 SHA-256。
 
 ## 介绍
 
@@ -164,10 +164,10 @@ RC2 勘误：[`docs/RC2_ASSET_ERRATA.md`](docs/RC2_ASSET_ERRATA.md)；原始 ZIP
 
 1. 安装 64 位 [7-Zip](https://www.7-zip.org/)，装到默认位置。  
    **只要这一个软件就够解 ZIP、RAR、7Z。** 不必为了 RAR 再装 WinRAR。只有 `.lz4` 才需要另备 `lz4.exe`。  
-2. 点 **[下载本程序](https://github.com/HypnosysNyx/GameArchiveManager/releases/download/v0.1.0-rc2/GameArchiveManager-0.1.0-RC2.zip)**，得到 `GameArchiveManager-0.1.0-RC2.zip`（软件，不是系统镜像）。当前 EXE 未签名，请核对同页提供的 [SHA-256 校验文件](https://github.com/HypnosysNyx/GameArchiveManager/releases/download/v0.1.0-rc2/GameArchiveManager-0.1.0-RC2.sha256)。  
+2. 正式 `GameArchiveManager-0.1.0.zip` 公开发布后再下载。在此之前，请参阅本机构建记录 [`docs/OFFICIAL_BUILD_0.1.0.md`](docs/OFFICIAL_BUILD_0.1.0.md)，不要把存档的 RC2 ZIP 当作正式版。当前 EXE 未签名，运行前请核对 SHA-256。
 3. 解压后保留**整个文件夹**（里面有 `GameArchiveManager.exe` 和 `_internal`）。不要只拷一个 exe。  
 4. 双击 `GameArchiveManager.exe`。刚装完 7-Zip 的话，请先关掉本程序再开一次，才会识别到。  
-5. 启动时应看到版本 `0.1.0`、`Release Candidate`，以及 7-Zip 状态为「可用」。  
+5. 启动时应看到版本 `0.1.0`、`Release`，以及 7-Zip 状态为「可用」。
 6. 把「游戏压缩包所在的文件夹」拖进黑窗口（或粘贴路径）回车。  
 7. 预览后输入 `Y` 回车开始。结果在该文件夹下的 `GameArchive_Output`。  
 8. 按 Enter 可以继续处理下一个路径。输入 `Q` 退出。
@@ -255,7 +255,7 @@ WinRAR 找 `C:\Program Files\WinRAR\Rar.exe`；LZ4 找 `tools\lz4.exe` 等。
 
 **为什么出现 `_2`？** 防止覆盖上次的 `GameArchive_Output`。  
 
-**密码中文打不进去？** 请使用本页下载的 RC2 版本（可见输入）。更旧的包会隐藏输入，中文输入法会失效。  
+**密码中文打不进去？** 请使用正式 0.1.0 包（可见输入）。更旧的包会隐藏输入，中文输入法会失效。
 
 **只有 WinRAR、没有 7-Zip？** 不够。zip/7z 不会走 WinRAR。请装 7-Zip。  
 
