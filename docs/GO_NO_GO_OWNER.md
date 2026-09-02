@@ -8,19 +8,19 @@
 
 ## Git 与工作树
 
-- 本地 `main` 相对 `origin/main` 超前 1；该提交尚未推送。
-- 本轮新增未提交 `docs/GO_NO_GO_OWNER.md`，并在 `docs/CURRENT_STATUS.md` 增加一行 next action。
+- 本地 `main` 与 `origin/main` 对齐；本轮勘误改动尚未推送。
+- 本轮新增 `docs/RC2_ASSET_ERRATA.md`，并更新 README、状态和所有者决策记录。
 - 本轮未 push、未创建 tag、未改 VM、`BUILD_TYPE` 或发布门禁。
 
-## 发布前剩余的所有者决策
+## 已落地的所有者决定
 
-1. 将隐私清理后的本地提交通过 push 或 PR 送出；送出后才可取得新的 Windows CI / CodeQL 结果。
-2. 公开 RC2 ZIP 内嵌旧 EXE 哈希文档的处置：保留原资产并附勘误，或重新打包为新资产并发布新的 ZIP SHA-256。
-3. 是否改为正式 Release（包括修改 `BUILD_TYPE`）；这必须在上述事项完成后另行明确批准。
+1. 保留原始 RC2 ZIP，发布勘误说明；不重打包、不替换 GitHub Release 资产。
+2. 不修改 `BUILD_TYPE`，不创建 `v0.1.0` 正式 tag，不发布正式 Release。
+3. 由编排方提交包含本次勘误文档、README 链接和状态说明的 PR；本地执行者不 push。
 
 ## 默认建议
 
-**不 push、不重打包、不改 `BUILD_TYPE`**，直到仓库所有者在本轮明确授权。原始 RC2 ZIP 保持不变。
+**不重打包、不改 `BUILD_TYPE`、不打正式 tag**。原始 RC2 ZIP 保持不变；本轮交付目标是勘误文档和 PR。
 
 ## 依据与风险
 
