@@ -13,6 +13,8 @@ Automated tests and the clean Windows 11 VM smoke test passed. Windows 10 remain
 
 **[Download this program](https://github.com/HypnosysNyx/GameArchiveManager/releases/download/v0.1.0-rc2/GameArchiveManager-0.1.0-RC2.zip)** · [SHA-256 checksums](https://github.com/HypnosysNyx/GameArchiveManager/releases/download/v0.1.0-rc2/GameArchiveManager-0.1.0-RC2.sha256) · [中文说明](#gamearchivemanager-中文)
 
+RC2 asset erratum: [`docs/RC2_ASSET_ERRATA.md`](docs/RC2_ASSET_ERRATA.md) — the original ZIP is unchanged; do not use the obsolete embedded EXE hash references.
+
 ### Privacy and RC2 security note
 
 - The application has no network, telemetry, analytics, crash-report upload, or cloud-sync logic.
@@ -133,6 +135,8 @@ Project policies: [`SECURITY.md`](SECURITY.md) · [`CONTRIBUTING.md`](CONTRIBUTI
 自动化测试和干净 Windows 11 虚拟机冒烟测试已通过；Windows 10 仍为可选未测试项。
 
 **[下载本程序](https://github.com/HypnosysNyx/GameArchiveManager/releases/download/v0.1.0-rc2/GameArchiveManager-0.1.0-RC2.zip)** · [SHA-256 校验文件](https://github.com/HypnosysNyx/GameArchiveManager/releases/download/v0.1.0-rc2/GameArchiveManager-0.1.0-RC2.sha256)
+
+RC2 勘误：[`docs/RC2_ASSET_ERRATA.md`](docs/RC2_ASSET_ERRATA.md)；原始 ZIP 保持不变，请勿使用其中已作废的旧 EXE 哈希引用。
 
 ### 隐私与 RC2 安全说明
 

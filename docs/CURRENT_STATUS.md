@@ -5,7 +5,7 @@ App version: `0.1.0`
 Build: `Release Candidate`  
 Test baseline: `py -B -m unittest discover -s tests -v` → `Ran 234 tests — OK (skipped=7)`
 Current P0: 无。`mixed_selected_and_ambiguous_content_silent_nondelivery`已完成自动与真实P0修复验证。  
-Current next action: RC2 干净 Win11 门禁证据已归并并通过；本地 `main` 当前比 `origin/main` 超前 1 个提交，完成隐私清理后可按仓库所有者授权 push。Windows 10 仍为可选未测，RC 身份不会自动变为正式 Release。
+Current next action: 所有者已决定保留原始 RC2 ZIP 并发布勘误，不重打包、不替换资产、不修改 `BUILD_TYPE`；待编排方从本分支提交 PR。Windows 10 仍为可选未测，RC 身份不会自动变为正式 Release。
 
 ## Current baseline
 
