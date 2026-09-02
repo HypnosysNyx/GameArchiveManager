@@ -1,5 +1,7 @@
 # GameArchiveManager — Grok Build 接管入口
 
+> 此文件保留为历史 Grok 专项说明。所有新接手者（人工、Codex、Grok、Antigravity 或其他 agent）统一先读根目录 [`START_HERE.md`](START_HERE.md)，并只使用其中指定的唯一工作区。
+
 > 本文件是 Grok Build 接管本项目时的第一阅读入口。不要依赖聊天记录推断项目状态。
 
 ## 1. 当前权威状态
@@ -12,8 +14,8 @@
 - 本次交接前验证：234 tests / OK（skipped=7）
 - 项目治理校验：PASS
 - 真实样本 Test Game 1–6：项目状态记录为 PASS
-- Clean Windows 11 VM：`NOT VERIFIED`（`clean_windows_11_vm=false`；旧 RC1 的通过记录不适用于安全加固后的 RC2）
-- 当前发布结论：RC2 已按仓库所有者确认公开并标记 GitHub Latest，但仍是 0.1.0 Release Candidate；在 Win11 门禁通过前，`rc_readiness.py` 保持 **NO-GO**，Latest 不等于稳定版验证通过
+- Clean Windows 11 VM：`PASS`（当前 RC2 ZIP `BA3A9ADD…` / EXE `67DF840B…`；`clean_windows_11_vm=true`）
+- 当前发布结论：`rc_readiness.py` 预期 **GO**，表示 RC 门禁具备最终评审条件；仍是 0.1.0 Release Candidate，Latest 和 GO 都不等于已授权稳定版发布
 - Windows 10 VM：可选，未验证
 
 `version.py` 是应用版本信息的唯一代码权威来源；`project_state.json` 是项目状态、测试基线和 Release Gate 的机器可读权威来源。不要把 RC 改成正式 Release，也不要把尚未完成的 VM 检查标成通过。
@@ -48,17 +50,7 @@ py scripts/rc_readiness.py
 
 干净 Windows 11 VM 冒烟已按 `docs/RC_SMOKE_TEST.md` 关闭门禁。当前仍不是新增功能阶段；不要把 RC 改成正式 Release，除非用户明确要求并完成发布清单。
 
-Win11 已关闭门禁的证据摘要（详见 `GrokWork\projects\GameArchiveManager\data\vm_gate_20260823.md`）：
-
-- 已在独立 VirtualBox Windows 11 虚拟机启动 RC EXE，VM 中没有可用 Python 开发环境。
-- EXE 能启动并显示 `0.1.0 / Release Candidate`。
-- 无外部工具时不会崩溃；ZIP 执行返回结构化 `TOOL_NOT_FOUND`。
-- 两次可比冷启动到菜单约 3.07 秒和 3.06 秒。
-- 单独复制 7-Zip 26.02 的 `7z.exe` 不构成有效工具部署；该版本还需要同目录 `7z.dll`。这属于测试工具准备问题，不是已证明的业务代码缺陷。
-- VirtualBox 共享剪贴板不稳定；曾使用只读虚拟光盘和键盘扫描码完成操作。
-- VM 会偶发停在 `Stopping`，此前在确认 Guest 已进入 OFF/DESTROYING 后才强制结束卡住的 `VirtualBoxVM` 进程。
-
-上述项已在干净 Win11 Guest 上留下可审计记录。`clean_windows_11_vm` 已 true。Windows 10 可选未测。
+当前证据以根目录 `rc2_smoke_codex.md`、`rc2_item14_codex.md`、`rc2_vm_status.md` 和 `.vm_gate/` 为准。历史 Grok VM 记录已经集中到 `.project_archive/agents/grok/`，只作追溯，不替代当前 RC2 证据。Windows 10 可选未测。
 
 ## 4. Feature Freeze 与禁止事项
 

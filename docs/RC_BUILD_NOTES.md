@@ -46,13 +46,27 @@ dist/
 dist\GameArchiveManager-0.1.0-RC2\GameArchiveManager.exe
 ```
 
-构建时 EXE SHA256：
+当前交付 RC2 ZIP SHA256（开发机 staging 与 Win11-Sandbox 一致）：
+
+```text
+BA3A9ADD4132EFF6188E3981C627400647941C572059F3D733347A3EE6823051
+```
+
+当前交付 RC2 EXE SHA256（开发机 staging 与 Win11-Sandbox 一致）：
+
+```text
+67DF840B832EE9072375A3A267DF220DBB546FD61EF8B048EA8C8C6B17D20F71
+```
+
+以下两个 SHA256 属于 2026-08-24 的旧门禁包，不是当前交付 RC2：
+
+- 可见密码 CLI 重建包：
 
 ```text
 F5F2DD823664AA2ABFE52A7C91597EA4FA3735E9C3EC8FF0E7A8813D9B92D83C
 ```
 
-此前 2026-08-24 Win11 门禁包（隐藏密码 / getpass）EXE SHA256：
+- 隐藏密码 / `getpass` 门禁包：
 
 ```text
 9BFDE4CE679EDF819AB4CB19E7E29FC6B4D5206134BA63D5739C6F87E27D0AD0
@@ -64,7 +78,7 @@ F5F2DD823664AA2ABFE52A7C91597EA4FA3735E9C3EC8FF0E7A8813D9B92D83C
 F825C3859C85B1FDA9BE5809E1DB6BA447FC3478316870EEB2813F46AF472490
 ```
 
-如果重新构建，哈希可能变化，交付前必须重新计算并更新测试记录。
+如果重新构建或重新打包，EXE 或 ZIP 哈希可能变化，交付前必须重新计算并更新测试记录。
 
 ## 构建依赖
 
@@ -198,14 +212,19 @@ GameArchiveManager\        NO_MATCH
 ## 已知限制
 
 - 当前是控制台 RC，没有 GUI。
+- 没有持久密码库；成功密码只在当前进程的 `SessionPasswordStore` 中短暂复用。
+- RAR/7Z 的等价内容预检查能力有限，最终仍依赖外部工具验证和解压后安全检查。
+- 没有暂停/恢复功能，也没有持久化 Pipeline 队列。
 - 外部工具需用户合法安装或配置。
 - LZ4 未随 RC 捆绑。
-- 打包版仅在当前 Windows 11 开发机完成首次冒烟，仍需干净 VM 结果。
+- 当前交付 RC2 ZIP `BA3A9ADD…` / EXE `67DF840B…` 已完成干净 Windows 11 VM 冒烟；证据见 `../rc2_smoke_codex.md` 与 `../rc2_item14_codex.md`。
+- 原始 RC2 ZIP 内附带的 `RC_BUILD_NOTES.md` / `RC_SMOKE_TEST.md` 仍包含旧 EXE 哈希；被测原包保持不可变，当前源码文档记录实际交付哈希。重新打包会产生新的 ZIP 哈希，必须作为新的交付身份处理。
 - Windows 10 尚未实际验证。
 - 没有代码签名，Windows SmartScreen 可能显示未知发布者提示。
 - 没有安装程序；必须整体复制 onedir，不能只复制 EXE。
+- `CleanupManager.delete()` 是受边界与授权保护的永久删除，不经过回收站；应用默认不会删除源归档或未知用户目录。
 - 本构建不是正式 Release，不得对外宣称稳定正式版。
 
 ## VM 测试结论状态
 
-当前状态：**等待干净 Windows VM 测试，不自行宣称发布完成。**
+当前状态：**干净 Windows 11 VM 门禁 PASS；Windows 10 可选未测。** 这只关闭 RC 必选机器门禁，不自动授权正式发布或把 `BUILD_TYPE` 改为 Release。

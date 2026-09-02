@@ -63,7 +63,7 @@
 - **NEXT-1：密码失败后的人工恢复闭环**：已完成。自动候选耗尽后可由可选回调安全输入、跳过或取消；成功密码只在当前进程的 SessionPasswordStore 中保留。
 - **NEXT-2：CLI Session Loop**：已完成。启动一次后可连续提交单/批量任务、查看最近结果、工具与设置并主动退出。Settings、ToolManager、HistoryStorage、ApplicationService和SessionPasswordStore复用；Task、Pipeline/Guard/runtime state、TaskReport及task-level candidates每次重建。
 
-下一阶段不再增加0.1.0功能，进入Release Validation：测试游戏4签字级真实回归，必要时复跑3/5/6，然后执行clean Windows 11 VM并重新评估GO/NO-GO。
+0.1.0 的真实样本签字回归与 clean Windows 11 VM 门禁已经完成。下一阶段不增加功能，进入最终 Release Checklist 与仓库所有者 Go/No-Go 评审；Windows 10 仍为可选未测。
 
 ## Phase 3：Content Root 抽象
 

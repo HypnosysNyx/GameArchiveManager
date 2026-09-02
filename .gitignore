@@ -21,6 +21,7 @@ dist_rc_validation/
 
 # VM gate, handoff snapshots, runtime data
 .vm_gate/
+.project_archive/
 handoff_output/
 logs/
 *.log

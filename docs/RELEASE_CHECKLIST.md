@@ -1,5 +1,7 @@
 # GameArchiveManager 0.1.0 RC 发布检查清单
 
+> 2026-08-28 的实际证据归并与剩余发布动作见 [`RELEASE_AUDIT_2026-08-28.md`](RELEASE_AUDIT_2026-08-28.md)。本文件保留可重复执行的逐项模板；未机械回填的方框不应覆盖审计报告、自动化、VM 证据或 `project_state.json` 的实际状态。
+
 本清单用于当前 Release Candidate 的发布门禁验收。带 `[ ]` 的项目必须由发布人员逐项确认；不要因为自动测试通过就跳过真实压缩包、真实 Windows 文件系统和磁盘安全测试。当前仍是 RC，不代表正式 Release。
 
 ## 1. 环境检查
@@ -129,13 +131,13 @@
 - [ ] 在干净的 Windows 测试目录中重新运行完整自动测试。
 - [ ] 完成人工 ZIP、RAR、7Z、LZ4、RAR.LZ4、密码、分卷、嵌入归档和递归测试记录。
 - [ ] 在发布说明中列出当前未实现或受限功能：GUI、持久密码库、RAR/7Z 等价内容预检查、暂停/恢复及持久化 Pipeline 队列。
-- [ ] 执行 `py scripts/verify_project_state.py`，确认治理状态与至少 224 项自动测试一致。
-- [ ] 执行 `py scripts/rc_readiness.py`；在 Clean Windows 11 VM 门禁真实完成前，结果必须保持 `NO-GO`，不得自行改为正式发布。
+- [x] 2026-08-28 执行 `py -B scripts/verify_project_state.py`：`Overall: PASS`，并核验 234 项自动测试。
+- [x] 2026-08-28 执行 `py -B scripts/rc_readiness.py`：Clean Windows 11 VM 门禁归并后结果为 `GO`；不得据此自行改为正式发布。
 - [ ] 至少由另一名测试人员复核危险删除、密码脱敏和原文件保留项目。
 
 ## RC 发布结论
 
 - [ ] 所有阻断项已通过。
 - [ ] 所有未通过项目已有明确的已知限制说明和风险接受记录。
-- [ ] Clean Windows 11 VM 冒烟门禁已完成并保存证据。
-- [ ] 0.1.0 RC 可以提交最终 Go / No-Go 评审；不得直接标记为正式 Release。
+- [x] Clean Windows 11 VM 冒烟门禁已完成并保存证据。
+- [x] 0.1.0 RC 可以提交最终 Go / No-Go 评审；不得直接标记为正式 Release。

@@ -31,17 +31,23 @@
 GameArchiveManager-0.1.0-RC2\
 ```
 
-在开发机交付记录中核对目录哈希或至少核对 EXE SHA256：
+在开发机交付记录中核对 RC2 ZIP 与 EXE SHA256：
 
 ```powershell
+Get-FileHash .\GameArchiveManager-0.1.0-RC2.zip -Algorithm SHA256
 Get-FileHash .\GameArchiveManager-0.1.0-RC2\GameArchiveManager.exe -Algorithm SHA256
 ```
 
-本次构建记录值：
+当前交付 RC2 实测值（开发机 staging 与 Win11-Sandbox 一致）：
 
 ```text
-9BFDE4CE679EDF819AB4CB19E7E29FC6B4D5206134BA63D5739C6F87E27D0AD0
+ZIP  BA3A9ADD4132EFF6188E3981C627400647941C572059F3D733347A3EE6823051
+EXE  67DF840B832EE9072375A3A267DF220DBB546FD61EF8B048EA8C8C6B17D20F71
 ```
+
+`9BFDE4CE679EDF819AB4CB19E7E29FC6B4D5206134BA63D5739C6F87E27D0AD0`
+与 `F5F2DD823664AA2ABFE52A7C91597EA4FA3735E9C3EC8FF0E7A8813D9B92D83C`
+属于 2026-08-24 的旧门禁包，不是当前交付 RC2 的身份哈希。
 
 ## 测试记录模板
 
@@ -375,4 +381,13 @@ Get-FileHash '<源压缩包路径>' -Algorithm SHA256
 
 ## 测试完成后的状态
 
-不要自行把 RC 改称正式 Release。提交完整记录、截图和问题清单，等待 Go/No-Go 评审。
+2026-08-28 当前交付 RC2 的必选 Windows 11 VM 清单已完成：
+
+- ZIP SHA256：`BA3A9ADD4132EFF6188E3981C627400647941C572059F3D733347A3EE6823051`
+- EXE SHA256：`67DF840B832EE9072375A3A267DF220DBB546FD61EF8B048EA8C8C6B17D20F71`
+- 清单 1–13、15–17：PASS，完整记录见 [`../rc2_smoke_codex.md`](../rc2_smoke_codex.md)。
+- 清单 14：EXTRACTING、SCANNING、VALIDATING 三阶段真实 Ctrl+C 与中断后重跑均 PASS，见 [`../rc2_item14_codex.md`](../rc2_item14_codex.md)。
+- VM 关机与残留宿主 GUI 清理时间线见 [`../rc2_vm_status.md`](../rc2_vm_status.md)。
+- 被测 ZIP 内附带文档写有旧 EXE 哈希，但实际 ZIP/EXE 身份已在宿主、来宾和三份字节一致的 ZIP 副本间核对；原始被测 ZIP 未被修改。
+
+结论：Clean Windows 11 RC gate **GO**。Windows 10 为可选未测。不要自行把 RC 改称正式 Release；仍须完成发布清单并等待仓库所有者批准任何 push、tag 或发布动作。
