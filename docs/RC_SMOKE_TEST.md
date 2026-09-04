@@ -1,5 +1,7 @@
 # GameArchiveManager 0.1.0 RC2 干净 Windows VM 冒烟测试
 
+> 历史 RC 记录；当前正式版为 `v0.1.0`。
+
 ## 测试目的
 
 验证 RC 构建在没有项目源码和 Python 开发环境的 Windows 机器上能够启动、发现外部工具、安全执行真实任务，并保持源文件和历史输出不变。

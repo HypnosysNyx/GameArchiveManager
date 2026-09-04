@@ -1,5 +1,7 @@
 # GameArchiveManager 0.1.0 RC2 构建说明
 
+> 历史 RC 记录；当前正式版为 `v0.1.0`。
+
 ## 构建身份
 
 - 应用名称：GameArchiveManager

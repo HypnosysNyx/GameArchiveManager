@@ -8,8 +8,8 @@ Windows CLI tool for messy **game download archives**: it looks at real file hea
 
 It is not a save-file manager, not a GUI, and not a replacement for 7-Zip. You still install 7-Zip; this program decides *what* to unpack and *what* to keep.
 
-**Current version: 0.1.0 Release.** The official local package has been built; publication is still pending.
-The new official package has not yet been smoke-tested on a clean Windows 11 VM. Windows 10 remains optional and untested.
+**Current version: 0.1.0 Release.** Use the published official package and its recorded SHA-256 checksum.
+The archived RC2 package is historical and is not the official 0.1.0 release.
 
 The old RC2 ZIP remains an archived candidate package; do not treat it as the official 0.1.0 release. Official-package build details and checksums: [`docs/OFFICIAL_BUILD_0.1.0.md`](docs/OFFICIAL_BUILD_0.1.0.md). · [中文说明](#gamearchivemanager-中文)
 
@@ -48,7 +48,7 @@ Not included: GUI, bundling 7-Zip/WinRAR/LZ4, persistent password vault, deletin
 ## Windows build (for most users)
 
 1. Install 64-bit **[7-Zip](https://www.7-zip.org/)** to the default folder `C:\Program Files\7-Zip\`. That one tool is enough for ZIP, RAR, and 7Z. WinRAR is only a RAR fallback. LZ4 is only for `.lz4`.
-2. Obtain the official `GameArchiveManager-0.1.0.zip` once it is published. Until then, use the local-package build record in [`docs/OFFICIAL_BUILD_0.1.0.md`](docs/OFFICIAL_BUILD_0.1.0.md); do not use the archived RC2 ZIP as the official release. Unzip the **whole folder**. Do not copy the `.exe` alone. The executable is unsigned, so verify its SHA-256 before running it.
+2. Obtain the official `GameArchiveManager-0.1.0.zip` from the published release. Unzip the **whole folder**. Do not copy the `.exe` alone. The executable is unsigned, so verify its SHA-256 before running it.
 3. Double-click `GameArchiveManager.exe`. You do not need Python. If 7-Zip was just installed, **restart this program** so it can see `7z.exe`.
 4. Startup should show `0.1.0` / `Release` and `7-Zip: 可用` (or FOUND).
 5. Drag a **folder** (or one archive file) onto the black window, or paste the path, then Enter.
@@ -131,8 +131,7 @@ Project policies: [`SECURITY.md`](SECURITY.md) · [`CONTRIBUTING.md`](CONTRIBUTI
 
 它**不是**游戏存档管理器，**没有**图形界面，也**不能代替** 7-Zip。请先自己安装 7-Zip；本程序负责判断解什么、留下什么。
 
-**当前版本：0.1.0 Release（正式版）。** 本机正式包已构建，尚未公开发布。
-新的正式包尚未在干净 Windows 11 虚拟机上完成冒烟测试；Windows 10 仍为可选未测试项。
+**当前版本：0.1.0 Release（正式版）。** 请从 GitHub Releases 下载正式包。Windows 10 仍为可选未测试项。
 
 旧 RC2 ZIP 仍是候选包存档，不能当作正式 0.1.0 发布包。正式包的本机构建信息与校验值见 [`docs/OFFICIAL_BUILD_0.1.0.md`](docs/OFFICIAL_BUILD_0.1.0.md)。
 
@@ -164,7 +163,7 @@ RC2 勘误：[`docs/RC2_ASSET_ERRATA.md`](docs/RC2_ASSET_ERRATA.md)；原始 ZIP
 
 1. 安装 64 位 [7-Zip](https://www.7-zip.org/)，装到默认位置。  
    **只要这一个软件就够解 ZIP、RAR、7Z。** 不必为了 RAR 再装 WinRAR。只有 `.lz4` 才需要另备 `lz4.exe`。  
-2. 正式 `GameArchiveManager-0.1.0.zip` 公开发布后再下载。在此之前，请参阅本机构建记录 [`docs/OFFICIAL_BUILD_0.1.0.md`](docs/OFFICIAL_BUILD_0.1.0.md)，不要把存档的 RC2 ZIP 当作正式版。当前 EXE 未签名，运行前请核对 SHA-256。
+2. 从 [GitHub Releases](https://github.com/HypnosysNyx/GameArchiveManager/releases/latest) 下载已发布的 `GameArchiveManager-0.1.0.zip`。RC2 ZIP 仅作历史归档，不要作为当前正式版下载。当前 EXE 未签名，运行前请核对 SHA-256。
 3. 解压后保留**整个文件夹**（里面有 `GameArchiveManager.exe` 和 `_internal`）。不要只拷一个 exe。  
 4. 双击 `GameArchiveManager.exe`。刚装完 7-Zip 的话，请先关掉本程序再开一次，才会识别到。  
 5. 启动时应看到版本 `0.1.0`、`Release`，以及 7-Zip 状态为「可用」。
