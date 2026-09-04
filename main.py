@@ -315,7 +315,7 @@ class CliSessionController:
 
     @staticmethod
     def _show_fast_path_help() -> None:
-        print(f"\n{APP_NAME} {APP_VERSION} RC")
+        print(f"\n{APP_NAME} {APP_VERSION} {BUILD_TYPE}")
         print("输入文件或目录路径直接开始任务")
         print("M = 菜单")
         print("Q = 退出")

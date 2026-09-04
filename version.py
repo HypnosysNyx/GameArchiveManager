@@ -2,4 +2,4 @@
 
 APP_NAME = "GameArchiveManager"
 APP_VERSION = "0.1.0"
-BUILD_TYPE = "Release Candidate"
+BUILD_TYPE = "Release"
