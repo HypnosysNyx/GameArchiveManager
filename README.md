@@ -8,8 +8,8 @@ Windows CLI tool for messy **game download archives**: it looks at real file hea
 
 It is not a save-file manager, not a GUI, and not a replacement for 7-Zip. You still install 7-Zip; this program decides *what* to unpack and *what* to keep.
 
-**Current version: 0.1.0 Release.** The official local package has been built; publication is still pending.
-The new official package has not yet been smoke-tested on a clean Windows 11 VM. Windows 10 remains optional and untested.
+**Current version: 0.1.0 Release.** Use the published official package and its recorded SHA-256 checksum.
+The archived RC2 package is historical and is not the official 0.1.0 release.
 
 The old RC2 ZIP remains an archived candidate package; do not treat it as the official 0.1.0 release. Official-package build details and checksums: [`docs/OFFICIAL_BUILD_0.1.0.md`](docs/OFFICIAL_BUILD_0.1.0.md). · [中文说明](#gamearchivemanager-中文)
 
@@ -48,7 +48,7 @@ Not included: GUI, bundling 7-Zip/WinRAR/LZ4, persistent password vault, deletin
 ## Windows build (for most users)
 
 1. Install 64-bit **[7-Zip](https://www.7-zip.org/)** to the default folder `C:\Program Files\7-Zip\`. That one tool is enough for ZIP, RAR, and 7Z. WinRAR is only a RAR fallback. LZ4 is only for `.lz4`.
-2. Obtain the official `GameArchiveManager-0.1.0.zip` once it is published. Until then, use the local-package build record in [`docs/OFFICIAL_BUILD_0.1.0.md`](docs/OFFICIAL_BUILD_0.1.0.md); do not use the archived RC2 ZIP as the official release. Unzip the **whole folder**. Do not copy the `.exe` alone. The executable is unsigned, so verify its SHA-256 before running it.
+2. Obtain the official `GameArchiveManager-0.1.0.zip` from the published release. Unzip the **whole folder**. Do not copy the `.exe` alone. The executable is unsigned, so verify its SHA-256 before running it.
 3. Double-click `GameArchiveManager.exe`. You do not need Python. If 7-Zip was just installed, **restart this program** so it can see `7z.exe`.
 4. Startup should show `0.1.0` / `Release` and `7-Zip: 可用` (or FOUND).
 5. Drag a **folder** (or one archive file) onto the black window, or paste the path, then Enter.

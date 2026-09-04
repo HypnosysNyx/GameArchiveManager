@@ -1,17 +1,17 @@
-# Current Status — 0.1.0 RC2
+# Current Status – 0.1.0 Release
 
 Last verified: `2026-08-28`
 App version: `0.1.0`  
-Build: `Release Candidate`  
+Build: `Release`
 Test baseline: `py -B -m unittest discover -s tests -v` → `Ran 234 tests — OK (skipped=7)`
 Current P0: 无。`mixed_selected_and_ambiguous_content_silent_nondelivery`已完成自动与真实P0修复验证。  
-Current next action: 所有者已决定保留原始 RC2 ZIP 并发布勘误，不重打包、不替换资产、不修改 `BUILD_TYPE`；待编排方从本分支提交 PR。Windows 10 仍为可选未测，RC 身份不会自动变为正式 Release。
+Current next action: 维护正式版文案与公开内容隐私审查；历史 RC2 ZIP 保留为归档，不作为当前下载对象，也不重打包或替换已发布资产。Windows 10 仍为可选未测。
 
 ## Current baseline
 
 - 自动测试：`py -B -m unittest discover -s tests -v`
 - 当前实际结果：`Ran 234 tests — OK (skipped=7)`。
-- 当前状态：0.1.0 RC2；自动化、本机构建和当前交付 RC2 的干净 Win11 VM 复验通过。Windows 10 可选未测。
+- 当前状态：0.1.0 Release；自动化、本机构建和正式版交付的干净 Win11 VM 复验通过。Windows 10 可选未测。
 - 核心冻结：是。当前不是新功能扩展阶段。
 
 ## Resolved P0
