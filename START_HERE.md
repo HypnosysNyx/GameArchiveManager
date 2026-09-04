@@ -33,7 +33,7 @@ py -B scripts/rc_readiness.py
 
 ## 3. 当前真实状态
 
-- 产品：GameArchiveManager `0.1.0 RC2`，仍是 Release Candidate，不是正式稳定版。
+- 产品：GameArchiveManager `0.1.0` 正式 Release，当前发布身份为 `0.1.0 / Release`。
 - Git 基线：`main` 的已提交 HEAD 为 `85a95bc`；远端发布动作不属于默认授权范围。
 - 自动化测试：2026-08-28 实跑 `234 tests — OK`。
 - 项目治理验证：2026-08-28 实跑 `Overall: PASS`。
@@ -50,7 +50,7 @@ RC2 的干净 Windows 11 必选门禁已经归并并关闭：
 3. [`rc2_vm_status.md`](rc2_vm_status.md) 记录任务结束和来宾正常关机；VirtualBox GUI 外壳只在日志已经记录 VM `OFF` 后才经用户批准清理。
 4. 被测原始 ZIP `BA3A9ADD…` 保持不变；其内附带旧 Markdown 写错 EXE 哈希，源码权威文档已明确实际 EXE 为 `67DF840B…`。不得声称原 ZIP 内文档已经被修改。
 
-下一步以 [`docs/RELEASE_AUDIT_2026-08-28.md`](docs/RELEASE_AUDIT_2026-08-28.md) 为准：本地归并提交已经形成；需要仓库所有者批准 push 或 PR 后取得新的 Windows CI / CodeQL 结果，并决定公开 RC2 ZIP 内嵌旧哈希文档的处理方式。`rc_readiness.py` 的 GO 只表示 RC 门禁具备评审条件，不授权修改 `BUILD_TYPE`、push、tag、替换 GitHub 资产或发布正式 Release。`cli_startup_latency_regression` 仍是非阻断 P1，等待进一步真实用户环境证据。
+当前正式版已发布；历史 RC2 文档与资产仅作归档参考，不作为当前下载对象。后续维护以正式版状态、公开内容隐私审查和已知问题记录为准；不在本次工作中 push、tag 或重打包。`cli_startup_latency_regression` 仍是非阻断 P1，等待进一步真实用户环境证据。
 
 ## 5. 当前工作树注意事项
 

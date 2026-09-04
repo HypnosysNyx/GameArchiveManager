@@ -5,7 +5,7 @@ App version: `0.1.0`
 Build: `Release`
 Test baseline: `py -B -m unittest discover -s tests -v` → `Ran 234 tests — OK (skipped=7)`
 Current P0: 无。`mixed_selected_and_ambiguous_content_silent_nondelivery`已完成自动与真实P0修复验证。  
-Current next action: 维护正式版文案与公开内容隐私审查；历史 RC2 ZIP 保留为归档，不作为当前下载对象，也不重打包或替换已发布资产。Windows 10 仍为可选未测。
+Current next action: 维护正式版文案与公开内容隐私审查；历史 RC2 ZIP 保留为归档，不作为当前下载对象，也不重打包或替换已发布正式资产。Windows 10 仍为可选未测。
 
 ## Current baseline
 
@@ -37,7 +37,7 @@ Issue ID：`password_candidate_history_pollution`
 - NEXT-1人工密码恢复闭环已完成：非交互默认仍返回结构化失败；交互CLI支持安全输入、跳过和取消。
 - AZ平台过滤误判已解决：只接受明确ASCII token，并只检查任务内容根以下的相对组件；历史记录保留在`KNOWN_ISSUES.md`。
 - 历史 `RELEASE_CANDIDATE_REPORT.md` 仍保留当时的 `Development/103 tests` 证据；当前 RC 构建说明与基线以本文件、`RC_BUILD_NOTES.md` 和 `project_state.json` 为准。
-- RC2 的 Win11 门禁已关闭；仍保持 `BUILD_TYPE=Release Candidate`，只有完成最终发布清单并得到仓库所有者明确批准后才可评估正式 Release。
+- RC2 的 Win11 门禁已关闭；该门禁结果属于历史 RC 证据。当前正式版身份为 `BUILD_TYPE=Release`，版本 `0.1.0` 已发布。
 
 ## Known real samples
 
@@ -64,7 +64,7 @@ Issue ID：`password_candidate_history_pollution`
 - 不要自动删除未知历史目录。
 - 不要记录密码明文或完整含密码命令行。
 - 不要为了测试通过降低结构/CRC/SHA256验证强度。
-- 不要仅凭 clean VM 门禁通过就标正式 Release；仍需完成发布清单和仓库所有者明确批准。
+- 历史 clean VM 门禁证据不得单独扩展为新的发布承诺；当前正式版发布状态以 `project_state.json` 和本文件为准。
 
 ## Knowledge base
 
@@ -85,5 +85,5 @@ Issue ID：`password_candidate_history_pollution`
 
 - `project_state.json`：schema v1，当前版本/构建/测试基线/P0/release gates已同步。
 - `scripts/verify_project_state.py`：最终结果见本次治理检查；schema、版本、文档、协议、密码泄漏、开发机路径、P0和不少于 `project_state.json` 已核验数量的自动测试必须一致。当前已核验 234 项。
-- `scripts/rc_readiness.py`：RC2 的必选机器门禁已同步，预期返回 **GO**。GO 表示 RC 发布门禁具备评审条件，不自动改变 Release Candidate 身份，也不授权 push、tag 或发布正式 Release。
+- `scripts/rc_readiness.py`：记录历史 RC2 机器门禁结果 **GO**；该结果仅作历史证据。当前正式版身份不由该脚本自动改变。
 - Windows 10 VM当前为可选门禁，未验证不会单独阻止0.1.0 RC，但必须如实报告。

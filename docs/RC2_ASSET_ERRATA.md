@@ -1,5 +1,7 @@
 # RC2 Asset Errata
 
+> 历史 RC 记录；当前正式版为 `v0.1.0`。
+
 ## English
 
 The published `v0.1.0-rc2` ZIP is intentionally unchanged. Its verified SHA-256 is:

@@ -38,7 +38,7 @@ PROJECT_HANDOFF
 - 项目名称：GameArchiveManager
 - 一句话目标：为 Windows 游戏资源提供真实格式识别、智能解压、递归恢复、有限密码尝试、安全整理和最终内容交付。
 - 当前版本：`0.1.0`
-- 当前 `BUILD_TYPE`：`Release Candidate`
+- 当前 `BUILD_TYPE`：`Release`（正式版 `0.1.0` 已发布）
 - 整体进度估计：约 90%
 - 当前阶段：RC / 稳定性验证
 - 当前不是新功能扩展阶段；核心功能已冻结，优先处理真实缺陷、回归和干净 VM 验证。
@@ -347,7 +347,7 @@ Archive identification
 
 APP_NAME = "GameArchiveManager"
 APP_VERSION = "0.1.0"
-BUILD_TYPE = "Release Candidate"
+BUILD_TYPE = "Release"
 ```
 
 ### `config/settings.py` 完整内容
@@ -575,8 +575,8 @@ return report
 - `cli_direct_path_entry_regression`：RESOLVED。路径可在首屏直接粘贴/拖入；M菜单和Fast Path共享任务启动链。
 - Test Game 4 Evidence Closure已通过，Required Real Sample Regression gate已闭合。
 - 干净 Windows 11 VM 冒烟PAUSED；有条件补 Windows 10。
-- 历史 `RELEASE_CANDIDATE_REPORT.md` 仍保留当时的 `Development/103 tests` 证据；当前事实以 `CURRENT_STATUS.md`、`RC_BUILD_NOTES.md` 和 `project_state.json` 的 Release Candidate/224 基线为准。
-- VM完成前保持 `BUILD_TYPE="Release Candidate"`。
+- 历史 `RELEASE_CANDIDATE_REPORT.md` 仍保留当时的 `Development/103 tests` 证据；当前事实以 `CURRENT_STATUS.md` 和 `project_state.json` 的正式版身份为准。
+- 历史 RC VM 门禁记录保持不变；当前 `BUILD_TYPE="Release"`。
 
 ### P2
 

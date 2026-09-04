@@ -1,5 +1,7 @@
 # GameArchiveManager 0.1.0 RC2 发布审计
 
+> 历史 RC 记录；当前正式版为 `v0.1.0`。
+
 审计日期：2026-08-28（Asia/Shanghai）
 
 ## 结论
