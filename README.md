@@ -131,8 +131,7 @@ Project policies: [`SECURITY.md`](SECURITY.md) · [`CONTRIBUTING.md`](CONTRIBUTI
 
 它**不是**游戏存档管理器，**没有**图形界面，也**不能代替** 7-Zip。请先自己安装 7-Zip；本程序负责判断解什么、留下什么。
 
-**当前版本：0.1.0 Release（正式版）。** 本机正式包已构建，尚未公开发布。
-0.1.0 正式包已发布；Windows 10 仍为可选未测试项。
+**当前版本：0.1.0 Release（正式版）。** 请从 GitHub Releases 下载正式包。Windows 10 仍为可选未测试项。
 
 旧 RC2 ZIP 仍是候选包存档，不能当作正式 0.1.0 发布包。正式包的本机构建信息与校验值见 [`docs/OFFICIAL_BUILD_0.1.0.md`](docs/OFFICIAL_BUILD_0.1.0.md)。
 
@@ -164,7 +163,7 @@ RC2 勘误：[`docs/RC2_ASSET_ERRATA.md`](docs/RC2_ASSET_ERRATA.md)；原始 ZIP
 
 1. 安装 64 位 [7-Zip](https://www.7-zip.org/)，装到默认位置。  
    **只要这一个软件就够解 ZIP、RAR、7Z。** 不必为了 RAR 再装 WinRAR。只有 `.lz4` 才需要另备 `lz4.exe`。  
-2. 从 [GitHub Releases](https://github.com/yttvocrog8p/GameArchiveManager/releases) 下载已发布的 `GameArchiveManager-0.1.0.zip`。RC2 ZIP 仅作历史归档，不要作为当前正式版下载。当前 EXE 未签名，运行前请核对 SHA-256。
+2. 从 [GitHub Releases](https://github.com/HypnosysNyx/GameArchiveManager/releases/latest) 下载已发布的 `GameArchiveManager-0.1.0.zip`。RC2 ZIP 仅作历史归档，不要作为当前正式版下载。当前 EXE 未签名，运行前请核对 SHA-256。
 3. 解压后保留**整个文件夹**（里面有 `GameArchiveManager.exe` 和 `_internal`）。不要只拷一个 exe。  
 4. 双击 `GameArchiveManager.exe`。刚装完 7-Zip 的话，请先关掉本程序再开一次，才会识别到。  
 5. 启动时应看到版本 `0.1.0`、`Release`，以及 7-Zip 状态为「可用」。
