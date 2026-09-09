@@ -4,8 +4,11 @@ import os
 import re
 import shutil
 import subprocess
+import tempfile
 from dataclasses import replace
 from pathlib import Path
+from urllib.parse import urljoin, urlparse
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from config.settings import Settings
 from application.runtime_paths import application_directory
@@ -26,6 +29,16 @@ class ToolManager:
         ToolName.WINRAR: "Rar.exe",
         ToolName.LZ4: "lz4.exe",
     }
+    SEVEN_ZIP_WEBSITE = "https://www.7-zip.org/"
+    WINGET_INSTALL_COMMAND = (
+        "winget",
+        "install",
+        "--id",
+        "7zip.7zip",
+        "-e",
+        "--accept-source-agreements",
+        "--accept-package-agreements",
+    )
     _verification_cache: dict[
         tuple[ToolName, Path, int, int], tuple[bool, str]
     ] = {}
@@ -56,14 +69,14 @@ class ToolManager:
             )
         # 显式 tool_paths 比 Settings 优先，便于测试或调用方临时覆盖。
         configured_paths.update(tool_paths or {})
-        normalized_paths = {
+        self._configured_paths = {
             ToolName(tool_name): configured_path
             for tool_name, configured_path in configured_paths.items()
         }
         for tool_name in ToolName:
             self._tools[tool_name].path = self._discover_tool_path(
                 tool_name,
-                normalized_paths.get(tool_name),
+                self._configured_paths.get(tool_name),
             )
         self.check_all_tools()
 
@@ -197,6 +210,62 @@ class ToolManager:
         for tool_name in self._tools:
             self.check_tool(tool_name, force=force)
 
+    def install_seven_zip(self) -> bool:
+        """Install 64-bit 7-Zip only after the CLI has received consent."""
+        if shutil.which("winget"):
+            completed = subprocess.run(
+                self.WINGET_INSTALL_COMMAND,
+                check=False,
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+            )
+            if completed.returncode != 0:
+                return self.refresh_tool(ToolName.SEVEN_ZIP)
+        else:
+            self._download_and_run_7zip_installer()
+        return self.refresh_tool(ToolName.SEVEN_ZIP)
+
+    def refresh_tool(self, tool_name: ToolName | str) -> bool:
+        """Rediscover one tool after an external installer has completed."""
+        name = ToolName(tool_name)
+        self._tools[name].path = self._discover_tool_path(
+            name, self._configured_paths.get(name)
+        )
+        return self.check_tool(name, force=True)
+
+    def _download_and_run_7zip_installer(self) -> None:
+        """Download the current x64 installer from 7-zip.org and wait for it."""
+        opener = build_opener(_Official7ZipRedirectHandler())
+        page = self._open_official_7zip_url(opener, self.SEVEN_ZIP_WEBSITE)
+        with page:
+            html = page.read().decode("utf-8", errors="replace")
+        match = re.search(
+            r'''href=["']([^"']*7z\d+-x64\.exe)["']''', html, re.IGNORECASE
+        )
+        if match is None:
+            raise RuntimeError("7-Zip official x64 installer was not found")
+        installer_url = urljoin(self.SEVEN_ZIP_WEBSITE, match.group(1))
+        installer_name = Path(urlparse(installer_url).path).name
+        with tempfile.TemporaryDirectory(prefix="GameArchiveManager-7zip-") as temp_dir:
+            installer_path = Path(temp_dir) / installer_name
+            response = self._open_official_7zip_url(opener, installer_url)
+            with response, installer_path.open("wb") as installer_file:
+                shutil.copyfileobj(response, installer_file)
+            subprocess.run(
+                [str(installer_path)],
+                check=False,
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+            )
+
+    @staticmethod
+    def _open_official_7zip_url(opener, url: str):
+        """Open a 7-zip.org HTTPS URL and reject redirected third parties."""
+        response = opener.open(Request(url, headers={"User-Agent": "GameArchiveManager"}))
+        parsed = urlparse(response.geturl())
+        if parsed.scheme != "https" or parsed.hostname != "www.7-zip.org":
+            response.close()
+            raise RuntimeError("7-Zip download left the official website")
+        return response
+
     def get_tool_status(self, tool_name: ToolName | str) -> ToolInfo:
         """返回指定工具的状态副本。"""
         return replace(self._tools[ToolName(tool_name)])
@@ -216,3 +285,13 @@ class ToolManager:
         if match:
             return match.group(1)
         return ""
+
+
+class _Official7ZipRedirectHandler(HTTPRedirectHandler):
+    """Allow HTTPS redirects only while they remain on www.7-zip.org."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        parsed = urlparse(urljoin(req.full_url, newurl))
+        if parsed.scheme != "https" or parsed.hostname != "www.7-zip.org":
+            raise RuntimeError("7-Zip download left the official website")
+        return super().redirect_request(req, fp, code, msg, headers, newurl)

@@ -54,6 +54,31 @@ def print_startup_info(tool_manager: ToolManager | None = None) -> None:
         print(f"状态: {status}")
 
 
+def offer_seven_zip_install(tool_manager: ToolManager) -> bool:
+    """Ask before permitting a missing or unverified 7-Zip installation."""
+    info = tool_manager.get_tool_status(ToolName.SEVEN_ZIP)
+    if info.verified:
+        return False
+    print("未找到或无法验证 7-Zip。")
+    print("官网: https://www.7-zip.org/")
+    try:
+        answer = input("是否从 7-Zip 官网安装 64 位 7-Zip? (Y/N) ").strip().upper()
+    except (EOFError, KeyboardInterrupt, StopIteration):
+        return False
+    if answer != "Y":
+        return False
+    try:
+        installed = tool_manager.install_seven_zip()
+    except Exception as error:
+        print(f"7-Zip 安装未完成: {type(error).__name__}")
+        installed = False
+    if installed:
+        print("7-Zip 已安装并验证可用。")
+    else:
+        print("7-Zip 安装后仍不可用，请关闭本程序后重新打开一次。")
+    return installed
+
+
 def count_skipped_archives(result: TaskAnalysisResult) -> int:
     """按当前任务执行规则统计会被跳过的初始压缩包。"""
     ignored_paths = [path.resolve() for path in result.ignored_items]
@@ -494,6 +519,7 @@ class CliSessionController:
             print(f"{display_name}: {status}")
             if info.path is not None:
                 print(f"  路径: {info.path}")
+        offer_seven_zip_install(self.service.tool_manager)
 
     def show_settings(self) -> None:
         settings = self.service.settings
@@ -542,6 +568,7 @@ def main() -> int:
     service.content_selection_callback = select_delivery_units
     service.password_recovery_callback = prompt_manual_password
     print_startup_info(service.tool_manager)
+    offer_seven_zip_install(service.tool_manager)
     print("GameArchiveManager 启动成功")
     CliSessionController(service).run_session()
     return 0
