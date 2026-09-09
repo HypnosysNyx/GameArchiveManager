@@ -216,12 +216,10 @@ class ToolManager:
             completed = subprocess.run(
                 self.WINGET_INSTALL_COMMAND,
                 check=False,
-                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
             )
-            if completed.returncode != 0:
+            if completed.returncode == 0:
                 return self.refresh_tool(ToolName.SEVEN_ZIP)
-        else:
-            self._download_and_run_7zip_installer()
+        self._download_and_run_7zip_installer()
         return self.refresh_tool(ToolName.SEVEN_ZIP)
 
     def refresh_tool(self, tool_name: ToolName | str) -> bool:
@@ -253,7 +251,6 @@ class ToolManager:
             subprocess.run(
                 [str(installer_path)],
                 check=False,
-                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
             )
 
     @staticmethod

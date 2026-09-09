@@ -76,6 +76,18 @@ class SevenZipInstallOfferTests(unittest.TestCase):
         self.assertEqual(run.call_args.args[0], manager.WINGET_INSTALL_COMMAND)
         download.assert_not_called()
 
+    def test_installer_downloads_when_winget_fails(self):
+        manager = ToolManager(settings=Settings())
+        with (
+            patch("tools.tool_manager.shutil.which", return_value="winget.exe"),
+            patch("tools.tool_manager.subprocess.run", return_value=Mock(returncode=1)),
+            patch.object(manager, "_download_and_run_7zip_installer") as download,
+            patch.object(manager, "refresh_tool", return_value=True),
+        ):
+            self.assertTrue(manager.install_seven_zip())
+
+        download.assert_called_once_with()
+
     def test_installer_downloads_only_when_winget_is_unavailable(self):
         manager = ToolManager(settings=Settings())
         with (

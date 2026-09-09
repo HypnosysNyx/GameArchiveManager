@@ -84,7 +84,7 @@ For more detail, see [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md), [`docs/CONFIGUR
 
 网上下载的资源包经常不太规矩：扩展名是假的，外面套着好几层，分卷缺了一块，或者 JPEG 里面藏着 RAR。这个程序会先看文件头，再按层解包，最后把看起来像游戏根目录的内容复制到一个新的输出目录里。
 
-它不是存档管理器，也没有图形界面，更不会替你安装 7-Zip。当前正式版本是 `0.1.0 Release`，可以从 [GitHub Releases](https://github.com/HypnosysNyx/GameArchiveManager/releases/latest) 下载。
+它不是存档管理器，也没有图形界面。缺少 7-Zip 时会先问你，同意后才去官网安装，不会在后台偷偷联网。当前正式版本是 `0.1.0 Release`，可以从 [GitHub Releases](https://github.com/HypnosysNyx/GameArchiveManager/releases/latest) 下载。
 
 ## 先准备好
 
