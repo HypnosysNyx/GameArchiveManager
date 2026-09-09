@@ -1,5 +1,6 @@
 """GameArchiveManager 简单命令行入口。"""
 
+import sys
 from pathlib import Path
 
 from application.app_service import GameArchiveService
@@ -52,6 +53,39 @@ def print_startup_info(tool_manager: ToolManager | None = None) -> None:
         print(f"路径: {tool_info.path or '未找到'}")
         print(f"版本: {tool_info.version or '未知'}")
         print(f"状态: {status}")
+
+
+def offer_seven_zip_install(tool_manager: ToolManager) -> bool:
+    """Ask before permitting a missing or unverified 7-Zip installation."""
+    info = tool_manager.get_tool_status(ToolName.SEVEN_ZIP)
+    if info.verified:
+        return False
+    _print_console_safe("未找到或无法验证 7-Zip。")
+    _print_console_safe("官网: https://www.7-zip.org/")
+    try:
+        _print_console_safe("是否从 7-Zip 官网安装 64 位 7-Zip? (Y/N) ", end="")
+        answer = input().strip().upper()
+    except (EOFError, KeyboardInterrupt, StopIteration):
+        return False
+    if answer != "Y":
+        return False
+    try:
+        installed = tool_manager.install_seven_zip()
+    except Exception as error:
+        _print_console_safe(f"7-Zip 安装未完成: {type(error).__name__}")
+        installed = False
+    if installed:
+        _print_console_safe("7-Zip 已安装并验证可用。")
+    else:
+        _print_console_safe("7-Zip 安装后仍不可用，请关闭本程序后重新打开一次。")
+    return installed
+
+
+def _print_console_safe(message: str, *, end: str = "\n") -> None:
+    """Print text without failing when an English Windows console uses cp1252."""
+    encoding = sys.stdout.encoding or "utf-8"
+    printable = message.encode(encoding, errors="replace").decode(encoding)
+    print(printable, end=end)
 
 
 def count_skipped_archives(result: TaskAnalysisResult) -> int:
@@ -494,6 +528,7 @@ class CliSessionController:
             print(f"{display_name}: {status}")
             if info.path is not None:
                 print(f"  路径: {info.path}")
+        offer_seven_zip_install(self.service.tool_manager)
 
     def show_settings(self) -> None:
         settings = self.service.settings
@@ -542,6 +577,7 @@ def main() -> int:
     service.content_selection_callback = select_delivery_units
     service.password_recovery_callback = prompt_manual_password
     print_startup_info(service.tool_manager)
+    offer_seven_zip_install(service.tool_manager)
     print("GameArchiveManager 启动成功")
     CliSessionController(service).run_session()
     return 0

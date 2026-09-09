@@ -8,7 +8,7 @@ A small Windows command-line tool for sorting out game-resource archives.
 
 Downloaded resource packs are often messy: the extension may be wrong, several archive layers may be wrapped together, a split volume may be missing, or a RAR may be hiding inside a JPEG. GameArchiveManager checks file signatures, extracts archives layer by layer, and copies content that looks like a game root into a fresh output directory.
 
-It is not a save-game manager, has no graphical interface, and does not install 7-Zip for you. The current release is `0.1.0 Release`, available from [GitHub Releases](https://github.com/HypnosysNyx/GameArchiveManager/releases/latest).
+It is not a save-game manager and has no graphical interface. If 7-Zip is missing, the program asks before visiting the official site to install it; it never connects in the background. The current release is `0.1.0 Release`, available from [GitHub Releases](https://github.com/HypnosysNyx/GameArchiveManager/releases/latest).
 
 ## Before you start
 
@@ -84,7 +84,7 @@ For more detail, see [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md), [`docs/CONFIGUR
 
 网上下载的资源包经常不太规矩：扩展名是假的，外面套着好几层，分卷缺了一块，或者 JPEG 里面藏着 RAR。这个程序会先看文件头，再按层解包，最后把看起来像游戏根目录的内容复制到一个新的输出目录里。
 
-它不是存档管理器，也没有图形界面，更不会替你安装 7-Zip。当前正式版本是 `0.1.0 Release`，可以从 [GitHub Releases](https://github.com/HypnosysNyx/GameArchiveManager/releases/latest) 下载。
+它不是存档管理器，也没有图形界面。缺少 7-Zip 时会先问你，同意后才去官网安装，不会在后台偷偷联网。当前正式版本是 `0.1.0 Release`，可以从 [GitHub Releases](https://github.com/HypnosysNyx/GameArchiveManager/releases/latest) 下载。
 
 ## 先准备好
 
@@ -132,7 +132,7 @@ For more detail, see [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md), [`docs/CONFIGUR
 
 可选配置：程序目录下的 `config.json`，或者 `%LOCALAPPDATA%\GameArchiveManager\config.json`。完整字段见 [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md)。
 
-程序不会修改或删除源压缩包，也不会按名字乱删用户目录。日志里可能有完整的本地路径，请把它当作私人信息保存。程序不联网、不上传遥测，也不会保存密码。
+程序不会修改或删除源压缩包，也不会按名字乱删用户目录。日志里可能有完整的本地路径，请把它当作私人信息保存。缺少 7-Zip 时，程序会先询问；只有同意后才会访问官网安装，不会在后台偷偷联网。程序不上传遥测，也不会保存密码。
 
 ## 从源码运行
 
