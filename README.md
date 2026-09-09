@@ -1,5 +1,7 @@
 # GameArchiveManager
 
+[English](#english) · [中文说明](#gamearchivemanager-中文)
+
 ## English
 
 A small Windows command-line tool for sorting out game-resource archives.
@@ -74,7 +76,9 @@ For more detail, see [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md), [`docs/CONFIGUR
 
 ---
 
-## 中文
+# GameArchiveManager (中文)
+
+[English](#english)
 
 整理游戏资源压缩包的小工具，跑在 Windows 命令行里。
 
