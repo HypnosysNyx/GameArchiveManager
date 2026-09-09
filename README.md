@@ -1,5 +1,81 @@
 # GameArchiveManager
 
+## English
+
+A small Windows command-line tool for sorting out game-resource archives.
+
+Downloaded resource packs are often messy: the extension may be wrong, several archive layers may be wrapped together, a split volume may be missing, or a RAR may be hiding inside a JPEG. GameArchiveManager checks file signatures, extracts archives layer by layer, and copies content that looks like a game root into a fresh output directory.
+
+It is not a save-game manager, has no graphical interface, and does not install 7-Zip for you. The current release is `0.1.0 Release`, available from [GitHub Releases](https://github.com/HypnosysNyx/GameArchiveManager/releases/latest).
+
+## Before you start
+
+- Windows 10 or 11
+- 64-bit [7-Zip](https://www.7-zip.org/), installed in its default location
+- `lz4.exe` if you need to process `.lz4` files
+- WinRAR as an optional fallback extractor for RAR archives
+
+After downloading, extract the entire `GameArchiveManager-0.1.0.zip`; do not keep only the executable. The program is unsigned, so you may check its SHA-256 value against the value published on the release page before running it.
+
+## Usage
+
+1. Double-click `GameArchiveManager.exe`. If you have just installed 7-Zip, restart the program so it can find the tool again.
+2. Drag in the folder containing the resources or a single archive, or paste a path into the black window and press Enter.
+3. Review the preview, then type `Y` and press Enter to confirm. Type `N` to cancel this run.
+4. Results are written to `GameArchive_Output` under the task directory. If a directory with that name already exists, the program uses `_2`, `_3`, and so on instead of overwriting it.
+5. Press Enter to process another path, or type `Q` to quit.
+
+The program recognizes ZIP, RAR, 7Z, and LZ4 files. It can also handle nested archives, common split volumes, and misleading extensions. APK, Office, EPUB, and JAR files are kept as-is during directory scans; if you pass one to the program directly, it is handled according to your choices.
+
+### Password-protected archives
+
+The easiest option is to create an empty folder beside the archive and use the password as the folder name. The program will try that name; ordinary file names are never treated as passwords.
+
+If that attempt fails, you can enter a password manually. The password is shown on screen to make Chinese input methods usable, but it is not written to logs, reports, or history. A successful password is kept only for the current run and is forgotten when the program exits.
+
+### Common input
+
+| Input | Action |
+| --- | --- |
+| Path / drag and drop | Start a task |
+| `Y` / `N` | Confirm / cancel |
+| `M` | Open the menu: new task, previous result, tool status, settings |
+| `I` / `S` / `C` | Enter a password / skip the current archive / cancel the whole task |
+| `Q` | Quit |
+| `Ctrl+C` | Interrupt the current task; source files are not modified |
+
+## Tools and output locations
+
+At startup, the program looks for tools in this order: paths in `config.json`, `tools` beside the program, the system's default installation locations, and PATH. Restart the program after installing or moving 7-Zip.
+
+Final files: `<task directory>\GameArchive_Output`
+
+Logs and history: `%LOCALAPPDATA%\GameArchiveManager\`
+
+Optional configuration: `config.json` beside the program or `%LOCALAPPDATA%\GameArchiveManager\config.json`. See [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md) for the full list of fields.
+
+The program does not modify or delete source archives and does not delete user directories by name. Logs may contain complete local paths, so treat them as private information. The program does not connect to the network, upload telemetry, or save passwords.
+
+## Running from source
+
+Python 3.10 or newer is required. There are no third-party Python dependencies at runtime:
+
+```powershell
+py main.py
+```
+
+You can also run `start_game_archive_manager.bat`. Build dependencies are listed in [`requirements-build.txt`](requirements-build.txt).
+
+## License
+
+The source code is released under the [MIT License](LICENSE). 7-Zip, WinRAR, and LZ4 each have their own license terms; this repository does not include `lz4.exe`.
+
+For more detail, see [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md), [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md), and [`docs/SECURITY.md`](docs/SECURITY.md).
+
+---
+
+## 中文
+
 整理游戏资源压缩包的小工具，跑在 Windows 命令行里。
 
 网上下载的资源包经常不太规矩：扩展名是假的，外面套着好几层，分卷缺了一块，或者 JPEG 里面藏着 RAR。这个程序会先看文件头，再按层解包，最后把看起来像游戏根目录的内容复制到一个新的输出目录里。
