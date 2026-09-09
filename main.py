@@ -1,5 +1,6 @@
 """GameArchiveManager 简单命令行入口。"""
 
+import sys
 from pathlib import Path
 
 from application.app_service import GameArchiveService
@@ -59,10 +60,11 @@ def offer_seven_zip_install(tool_manager: ToolManager) -> bool:
     info = tool_manager.get_tool_status(ToolName.SEVEN_ZIP)
     if info.verified:
         return False
-    print("未找到或无法验证 7-Zip。")
-    print("官网: https://www.7-zip.org/")
+    _print_console_safe("未找到或无法验证 7-Zip。")
+    _print_console_safe("官网: https://www.7-zip.org/")
     try:
-        answer = input("是否从 7-Zip 官网安装 64 位 7-Zip? (Y/N) ").strip().upper()
+        _print_console_safe("是否从 7-Zip 官网安装 64 位 7-Zip? (Y/N) ", end="")
+        answer = input().strip().upper()
     except (EOFError, KeyboardInterrupt, StopIteration):
         return False
     if answer != "Y":
@@ -70,13 +72,20 @@ def offer_seven_zip_install(tool_manager: ToolManager) -> bool:
     try:
         installed = tool_manager.install_seven_zip()
     except Exception as error:
-        print(f"7-Zip 安装未完成: {type(error).__name__}")
+        _print_console_safe(f"7-Zip 安装未完成: {type(error).__name__}")
         installed = False
     if installed:
-        print("7-Zip 已安装并验证可用。")
+        _print_console_safe("7-Zip 已安装并验证可用。")
     else:
-        print("7-Zip 安装后仍不可用，请关闭本程序后重新打开一次。")
+        _print_console_safe("7-Zip 安装后仍不可用，请关闭本程序后重新打开一次。")
     return installed
+
+
+def _print_console_safe(message: str, *, end: str = "\n") -> None:
+    """Print text without failing when an English Windows console uses cp1252."""
+    encoding = sys.stdout.encoding or "utf-8"
+    printable = message.encode(encoding, errors="replace").decode(encoding)
+    print(printable, end=end)
 
 
 def count_skipped_archives(result: TaskAnalysisResult) -> int:

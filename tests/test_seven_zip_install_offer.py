@@ -1,7 +1,7 @@
 """Consent and installer-selection tests for the optional 7-Zip install."""
 
 import unittest
-from io import StringIO
+from io import BytesIO, StringIO, TextIOWrapper
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -35,7 +35,10 @@ class SevenZipInstallOfferTests(unittest.TestCase):
         manager = Mock()
         manager.get_tool_status.return_value = seven_zip_info(verified=False)
 
-        with patch("builtins.input", return_value="N"):
+        with (
+            patch("builtins.input", return_value="N"),
+            patch("sys.stdout", TextIOWrapper(BytesIO(), encoding="cp1252")),
+        ):
             self.assertFalse(offer_seven_zip_install(manager))
 
         manager.install_seven_zip.assert_not_called()
@@ -45,7 +48,10 @@ class SevenZipInstallOfferTests(unittest.TestCase):
         manager.get_tool_status.return_value = seven_zip_info(verified=False)
         manager.install_seven_zip.return_value = True
 
-        with patch("builtins.input", return_value="Y"):
+        with (
+            patch("builtins.input", return_value="Y"),
+            patch("sys.stdout", TextIOWrapper(BytesIO(), encoding="cp1252")),
+        ):
             self.assertTrue(offer_seven_zip_install(manager))
 
         manager.install_seven_zip.assert_called_once_with()
