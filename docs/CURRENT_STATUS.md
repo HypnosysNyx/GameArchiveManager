@@ -1,18 +1,18 @@
-# Current Status – 0.1.0 Release
+# Current Status – 0.2.0 source update
 
-Last verified: `2026-08-28`
-App version: `0.1.0`  
+Last verified: `2026-10-14`
+App version: `0.2.0`  
 Build: `Release`
-Test baseline: `py -B -m unittest discover -s tests -v` → `Ran 234 tests — OK (skipped=7)`
-Current P0: 无。`mixed_selected_and_ambiguous_content_silent_nondelivery`已完成自动与真实P0修复验证。  
-Current next action: 维护正式版文案与公开内容隐私审查；历史 RC2 ZIP 保留为归档，不作为当前下载对象，也不重打包或替换已发布正式资产。Windows 10 仍为可选未测。
+Test baseline: `py -B -m unittest discover -s tests -v` → `Ran 262 tests — OK`
+Current P0: 无。
+Current next action: `0.2.0` 以源码发布，不附带新的安装包或 exe。`0.1.0` 便携包保持原样，不重打包，也不替换已发布资产。Windows 10 仍为可选未测。
 
 ## Current baseline
 
 - 自动测试：`py -B -m unittest discover -s tests -v`
-- 当前实际结果：`Ran 234 tests — OK (skipped=7)`。
-- 当前状态：0.1.0 Release；自动化、本机构建和正式版交付的干净 Win11 VM 复验通过。Windows 10 可选未测。
-- 核心冻结：是。当前不是新功能扩展阶段。
+- 当前实际结果：`Ran 262 tests — OK`。2026-10-14 在新的 Windows 11 虚拟机里复跑，262 项通过，没有跳过。
+- 当前状态：`0.2.0` / `Release`。这次发布的是源码，不是新的安装包或 exe。`clean_windows_11_vm` 保持原记录，不把这次虚拟机结果写成新的正式打包验收。Windows 10 可选未测。
+- 核心冻结：否。0.2.0 增加了窗口、本机密码库、LZ4 安装询问、PC 标签开关和失败阶段记录。
 
 ## Resolved P0
 
@@ -49,13 +49,13 @@ Issue ID：`password_candidate_history_pollution`
 ## Password recovery status
 
 - **NEXT-1 / `manual_password_recovery_after_exhaustion`**：RESOLVED。自动候选耗尽后，CLI提供I/S/C闭环；人工密码默认可见输入（中文输入法可用），明文不进日志/报告/history。业务层只接收可选回调。
-- 人工密码只存在内存；只有实际成功的密码进入`SessionPasswordStore`，程序退出即消失。
-- `save_passwords`与`auto_try_password`仍是未接线的legacy设置，不代表存在持久密码库。
+- 只有实际成功的密码进入 `SessionPasswordStore`。密码库用当前 Windows 用户的 DPAPI 加密，保存在 `%LOCALAPPDATA%\GameArchiveManager\passwords.json`，重启后仍可作为候选。明文不进日志、报告或 history。
+- `save_passwords` 与 `auto_try_password` 仍是未接线的 legacy 设置。真正使用的是上面的本机密码库。
 - **NEXT-2 / `cli_session_loop`**：COMPLETED（2026-08-15）。CLI启动后保持一个`GameArchiveService`会话，可连续新建单任务或批量任务、查看最近结果/工具/设置并主动退出。Settings、ToolManager、HistoryStorage、ApplicationService和SessionPasswordStore为会话级；Task、RuntimeTracker、Pipeline/Guard、report和task candidates每次重建。
 
 ## Do not do
 
-- 不要新增GUI或自动下载/安装工具。
+- 不要在用户未同意时下载或安装工具。
 - 不要把leaf当final content。
 - 不要把EXE当唯一游戏证据。
 - 不要仅按文件名、目录名或大小去重。

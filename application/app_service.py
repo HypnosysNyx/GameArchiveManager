@@ -1,6 +1,7 @@
 """Application service for execution, reporting, cleanup, and history."""
 
 from datetime import datetime
+import inspect
 from pathlib import Path
 from time import perf_counter
 from typing import Callable
@@ -115,12 +116,15 @@ class GameArchiveService:
                 process_all_inputs=process_all_inputs,
             )
         task.settings.ignore_android_az = (
-            self.settings.ignore_android or self.settings.ignore_AZ
+            self.settings.ignore_android
+            or self.settings.ignore_AZ
+            or getattr(self.settings, "ignore_pc", False)
         )
         task.settings.delete_archives = self.settings.delete_archives
         task.settings.delete_empty_folders = self.settings.delete_empty_folders
         tracker = TaskRunDirectoryTracker(task.task_path)
         started_at = perf_counter()
+        failure_stage = "APPLICATION"
 
         with GameLogger(task.task_id, self.log_directory) as game_logger:
             game_logger.info(
@@ -130,11 +134,19 @@ class GameArchiveService:
             game_logger.task_started(task.task_path)
             game_logger.info(f"Task 创建: {task.task_id}")
             try:
+                def capture_pipeline_progress(update: PipelineProgress) -> None:
+                    nonlocal failure_stage
+                    failure_stage = update.phase.value
+                    if progress_callback is not None:
+                        progress_callback(update)
+
                 arguments = {
                     "max_password_attempts": self.settings.max_password_attempts,
                 }
-                if progress_callback is not None:
-                    arguments["progress_callback"] = progress_callback
+                if progress_callback is not None or self._accepts_progress_callback(
+                    self.task_executor.execute
+                ):
+                    arguments["progress_callback"] = capture_pipeline_progress
                 active_password_callback = (
                     manual_password_callback or self.password_recovery_callback
                 )
@@ -143,6 +155,7 @@ class GameArchiveService:
                         active_password_callback
                     )
                 game_logger.info("执行开始")
+                failure_stage = "ANALYSIS"
                 with activate_directory_tracker(tracker):
                     execution_result = self.task_executor.execute(
                         task, **arguments
@@ -150,12 +163,14 @@ class GameArchiveService:
                 execution_time = perf_counter() - started_at
                 game_logger.info(f"执行完成: {task.status.value}")
 
+                failure_stage = "REPORTING"
                 report = self.report_generator.generate(
                     execution_result, execution_time=execution_time
                 )
                 output_sources = self._extraction_output_sources(
                     execution_result, tracker
                 )
+                failure_stage = "DELIVERY"
                 output_roots, final_candidates = (
                     self.output_organizer.resolve_and_organize(
                     task.task_path,
@@ -211,6 +226,7 @@ class GameArchiveService:
                             tracker, "ORPHANED_TEMP: DELIVERY_FAILED"
                         )
                     else:
+                        failure_stage = "CLEANUP"
                         residuals = self._cleanup_successful_run(
                             task.task_path,
                             tracker,
@@ -224,6 +240,7 @@ class GameArchiveService:
                     )
                 report.residual_internal_directories = residuals
                 self._append_residual_summary(report)
+                failure_stage = "HISTORY"
                 self._save_history(
                     task,
                     report,
@@ -234,6 +251,33 @@ class GameArchiveService:
                 return report
             except (Exception, KeyboardInterrupt) as error:
                 task.status = TaskStatus.FAILED
+                normalized_stage = failure_stage.upper()
+                if isinstance(error, KeyboardInterrupt):
+                    failure_reason = (
+                        f"任务在 {failure_stage} 阶段被中断，内部目录已安全保留。"
+                    )
+                elif any(
+                    marker in normalized_stage
+                    for marker in ("VERIFY", "VALIDAT", "CHECK")
+                ):
+                    failure_reason = (
+                        f"{failure_stage} 阶段校验失败: {type(error).__name__}。"
+                    )
+                elif "EXTRACT" in normalized_stage:
+                    failure_reason = (
+                        f"{failure_stage} 阶段解压工具失败: {type(error).__name__}。"
+                    )
+                elif any(
+                    marker in normalized_stage
+                    for marker in ("SCAN", "ANALYS")
+                ):
+                    failure_reason = (
+                        f"{failure_stage} 阶段扫描失败: {type(error).__name__}。"
+                    )
+                else:
+                    failure_reason = (
+                        f"{failure_stage} 阶段失败: {type(error).__name__}。"
+                    )
                 residuals = self._orphaned_directories(
                     tracker, f"ORPHANED_TEMP: {type(error).__name__}"
                 )
@@ -248,17 +292,21 @@ class GameArchiveService:
                     failure_details=[
                         FailureDetail(
                             file_path=task.task_path,
-                            stage="APPLICATION",
+                            stage=failure_stage,
                             tool=None,
                             error_type=type(error).__name__,
-                            reason="任务执行被中断，内部目录已安全保留",
+                            reason=failure_reason,
                         )
                     ],
                     residual_internal_directories=residuals,
-                    summary=f"任务执行失败: {type(error).__name__}。",
+                    summary=failure_reason,
                 )
                 self._append_residual_summary(report)
-                game_logger.error(f"Task exception: {type(error).__name__}")
+                game_logger.error(
+                    "Task exception: "
+                    f"stage={failure_stage}; type={type(error).__name__}; "
+                    f"reason={failure_reason}"
+                )
                 try:
                     self._save_history(
                         task,
@@ -271,6 +319,17 @@ class GameArchiveService:
                         f"History exception: {type(history_error).__name__}"
                     )
                 return report
+
+    @staticmethod
+    def _accepts_progress_callback(execute: Callable) -> bool:
+        """Keep compatibility with legacy executors that accept no callback."""
+        callback = getattr(execute, "side_effect", None) or execute
+        parameters = inspect.signature(callback).parameters.values()
+        return any(
+            parameter.name == "progress_callback"
+            or parameter.kind is inspect.Parameter.VAR_KEYWORD
+            for parameter in parameters
+        )
 
     @staticmethod
     def _extraction_output_sources(

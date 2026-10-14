@@ -5,6 +5,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+import zipfile
 from dataclasses import replace
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
@@ -30,6 +31,15 @@ class ToolManager:
         ToolName.LZ4: "lz4.exe",
     }
     SEVEN_ZIP_WEBSITE = "https://www.7-zip.org/"
+    LZ4_RELEASES_URL = "https://github.com/lz4/lz4/releases/latest"
+    LZ4_RELEASES_PREFIX = "https://github.com/lz4/lz4/releases/download/"
+    LZ4_INSTALL_PATH = Path(r"C:\Tools\LZ4\lz4.exe")
+    LZ4_DOWNLOAD_HOSTS = {
+        "github.com",
+        "release-assets.githubusercontent.com",
+        "objects.githubusercontent.com",
+        "github-releases.githubusercontent.com",
+    }
     WINGET_INSTALL_COMMAND = (
         "winget",
         "install",
@@ -222,6 +232,52 @@ class ToolManager:
         self._download_and_run_7zip_installer()
         return self.refresh_tool(ToolName.SEVEN_ZIP)
 
+    def install_lz4(self) -> bool:
+        """Place only lz4.exe from an official LZ4 Windows release archive."""
+        opener = build_opener(_OfficialLZ4RedirectHandler())
+        page = self._open_official_lz4_url(opener, self.LZ4_RELEASES_URL)
+        with page:
+            latest_url = page.geturl()
+        latest_path = urlparse(latest_url).path
+        tag_prefix = "/lz4/lz4/releases/tag/"
+        if not latest_path.startswith(tag_prefix) or not latest_path[len(tag_prefix) :]:
+            raise RuntimeError("Official LZ4 release tag was not found")
+        tag = latest_path[len(tag_prefix) :]
+        assets_url = f"https://github.com/lz4/lz4/releases/expanded_assets/{tag}"
+        page = self._open_official_lz4_url(opener, assets_url)
+        with page:
+            html = page.read().decode("utf-8", errors="replace")
+        match = re.search(
+            r'''href=["'](/lz4/lz4/releases/download/[^"']*?/[^"']*win64[^"']*\.zip)["']''',
+            html,
+            re.IGNORECASE,
+        )
+        if match is None:
+            raise RuntimeError("Official LZ4 Windows release archive was not found")
+        archive_url = urljoin("https://github.com", match.group(1))
+        if not archive_url.startswith(self.LZ4_RELEASES_PREFIX):
+            raise RuntimeError("LZ4 download left the official repository")
+        with tempfile.TemporaryDirectory(prefix="GameArchiveManager-lz4-") as temp_dir:
+            archive_path = Path(temp_dir) / Path(urlparse(archive_url).path).name
+            response = self._open_official_lz4_url(opener, archive_url)
+            with response, archive_path.open("wb") as archive_file:
+                shutil.copyfileobj(response, archive_file)
+            with zipfile.ZipFile(archive_path) as archive:
+                member = next(
+                    (
+                        name
+                        for name in archive.namelist()
+                        if Path(name).name.lower() == "lz4.exe"
+                    ),
+                    None,
+                )
+                if member is None:
+                    raise RuntimeError("Official LZ4 archive did not contain lz4.exe")
+                self.LZ4_INSTALL_PATH.parent.mkdir(parents=True, exist_ok=True)
+                with archive.open(member) as source, self.LZ4_INSTALL_PATH.open("wb") as target:
+                    shutil.copyfileobj(source, target)
+        return self.refresh_tool(ToolName.LZ4)
+
     def refresh_tool(self, tool_name: ToolName | str) -> bool:
         """Rediscover one tool after an external installer has completed."""
         name = ToolName(tool_name)
@@ -263,6 +319,23 @@ class ToolManager:
             raise RuntimeError("7-Zip download left the official website")
         return response
 
+    @staticmethod
+    def _open_official_lz4_url(opener, url: str):
+        """Open only HTTPS URLs rooted at the official lz4/lz4 repository."""
+        parsed_url = urlparse(url)
+        if (
+            parsed_url.scheme != "https"
+            or parsed_url.hostname != "github.com"
+            or not parsed_url.path.startswith("/lz4/lz4/")
+        ):
+            raise RuntimeError("LZ4 download left the official repository")
+        response = opener.open(Request(url, headers={"User-Agent": "GameArchiveManager"}))
+        parsed = urlparse(response.geturl())
+        if parsed.scheme != "https" or parsed.hostname not in ToolManager.LZ4_DOWNLOAD_HOSTS:
+            response.close()
+            raise RuntimeError("LZ4 download left the official repository")
+        return response
+
     def get_tool_status(self, tool_name: ToolName | str) -> ToolInfo:
         """返回指定工具的状态副本。"""
         return replace(self._tools[ToolName(tool_name)])
@@ -291,4 +364,17 @@ class _Official7ZipRedirectHandler(HTTPRedirectHandler):
         parsed = urlparse(urljoin(req.full_url, newurl))
         if parsed.scheme != "https" or parsed.hostname != "www.7-zip.org":
             raise RuntimeError("7-Zip download left the official website")
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+class _OfficialLZ4RedirectHandler(HTTPRedirectHandler):
+    """Allow official LZ4 redirects to GitHub's release-file hosts only."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        parsed = urlparse(urljoin(req.full_url, newurl))
+        if (
+            parsed.scheme != "https"
+            or parsed.hostname not in ToolManager.LZ4_DOWNLOAD_HOSTS
+        ):
+            raise RuntimeError("LZ4 download left the official repository")
         return super().redirect_request(req, fp, code, msg, headers, newurl)

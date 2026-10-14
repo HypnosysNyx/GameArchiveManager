@@ -60,10 +60,14 @@ def offer_seven_zip_install(tool_manager: ToolManager) -> bool:
     info = tool_manager.get_tool_status(ToolName.SEVEN_ZIP)
     if info.verified:
         return False
-    _print_console_safe("未找到或无法验证 7-Zip。")
-    _print_console_safe("官网: https://www.7-zip.org/")
+    _print_console_safe("未找到或无法验证 7-Zip / 7-Zip was not found or could not be verified.")
+    _print_console_safe("官网 / Official website: https://www.7-zip.org/")
     try:
-        _print_console_safe("是否从 7-Zip 官网安装 64 位 7-Zip? (Y/N) ", end="")
+        _print_console_safe(
+            "是否从 7-Zip 官网安装 64 位 7-Zip? "
+            "Install 64-bit 7-Zip from its official website? (Y/N) ",
+            end="",
+        )
         answer = input().strip().upper()
     except (EOFError, KeyboardInterrupt, StopIteration):
         return False
@@ -75,9 +79,50 @@ def offer_seven_zip_install(tool_manager: ToolManager) -> bool:
         _print_console_safe(f"7-Zip 安装未完成: {type(error).__name__}")
         installed = False
     if installed:
-        _print_console_safe("7-Zip 已安装并验证可用。")
+        _print_console_safe("7-Zip 已安装并验证可用 / 7-Zip is installed and verified.")
     else:
-        _print_console_safe("7-Zip 安装后仍不可用，请关闭本程序后重新打开一次。")
+        _print_console_safe(
+            "7-Zip 安装后仍不可用，请关闭本程序后重新打开一次 / "
+            "7-Zip is still unavailable after installation; restart this program."
+        )
+    return installed
+
+
+def offer_lz4_install(tool_manager: ToolManager) -> bool:
+    """Ask before downloading a missing or unverified LZ4 command line tool."""
+    info = tool_manager.get_tool_status(ToolName.LZ4)
+    if info.verified:
+        return False
+    _print_console_safe(
+        "未找到或无法验证 LZ4 / LZ4 was not found or could not be verified."
+    )
+    _print_console_safe(
+        "官方发布 / Official releases: https://github.com/lz4/lz4/releases"
+    )
+    try:
+        _print_console_safe(
+            "是否从 LZ4 官方发布下载 Windows 命令行工具? "
+            "Download the LZ4 Windows command-line tool from its official release? (Y/N) ",
+            end="",
+        )
+        answer = input().strip().upper()
+    except (EOFError, KeyboardInterrupt, StopIteration):
+        return False
+    if answer != "Y":
+        return False
+    try:
+        installed = tool_manager.install_lz4()
+    except Exception as error:
+        _print_console_safe(f"LZ4 未放置完成 / LZ4 was not placed: {type(error).__name__}")
+        return False
+    if installed:
+        _print_console_safe(
+            "LZ4 已放置并验证可用 / LZ4 is placed and verified."
+        )
+    else:
+        _print_console_safe(
+            "LZ4 未放置完成，程序将继续 / LZ4 was not placed; continuing."
+        )
     return installed
 
 
@@ -578,6 +623,7 @@ def main() -> int:
     service.password_recovery_callback = prompt_manual_password
     print_startup_info(service.tool_manager)
     offer_seven_zip_install(service.tool_manager)
+    offer_lz4_install(service.tool_manager)
     print("GameArchiveManager 启动成功")
     CliSessionController(service).run_session()
     return 0

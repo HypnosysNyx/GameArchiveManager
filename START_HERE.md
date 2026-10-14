@@ -1,6 +1,6 @@
 # GameArchiveManager 统一接管入口
 
-本文件面向任何后续维护者或 AI agent，不依赖旧聊天记录。最后核对：2026-08-28（Asia/Shanghai）。
+本文件面向任何后续维护者或 AI agent，不依赖旧聊天记录。最后核对：2026-10-14（Asia/Shanghai）。
 
 ## 1. 只打开这个目录
 
@@ -33,11 +33,9 @@ py -B scripts/rc_readiness.py
 
 ## 3. 当前真实状态
 
-- 产品：GameArchiveManager `0.1.0` 正式 Release，当前发布身份为 `0.1.0 / Release`。
-- Git 基线：`main` 的已提交 HEAD 为 `85a95bc`；远端发布动作不属于默认授权范围。
-- 自动化测试：2026-08-28 实跑 `234 tests — OK`。
-- 项目治理验证：2026-08-28 实跑 `Overall: PASS`。
-- `project_state.json` 已在 2026-08-28 归并证据后将 `clean_windows_11_vm=true`；`scripts/rc_readiness.py` 的预期结果为 `GO`。
+- 产品：GameArchiveManager `0.2.0`，当前发布身份为 `0.2.0 / Release`。这次发布的是源码，不附带新的安装包或 exe。`0.1.0` 便携包保持原样。
+- 自动化测试：2026-10-14 实跑 `262 tests — OK`，新 Windows 11 虚拟机里同样 262 项通过、没有跳过。
+- `project_state.json` 的 `clean_windows_11_vm` 保持 `true`，这次不把它改写成新的正式打包验收。`scripts/rc_readiness.py` 的历史结果仍是 `GO`。
 - 真实样本回归、密码泄漏检查和源文件完整性策略均已通过现有治理检查。
 - Windows 10 VM 是可选未验证项；不得谎报为 PASS。
 
@@ -50,7 +48,7 @@ RC2 的干净 Windows 11 必选门禁已经归并并关闭：
 3. [`rc2_vm_status.md`](rc2_vm_status.md) 记录任务结束和来宾正常关机；VirtualBox GUI 外壳只在日志已经记录 VM `OFF` 后才经用户批准清理。
 4. 被测原始 ZIP `BA3A9ADD…` 保持不变；其内附带旧 Markdown 写错 EXE 哈希，源码权威文档已明确实际 EXE 为 `67DF840B…`。不得声称原 ZIP 内文档已经被修改。
 
-当前正式版已发布；历史 RC2 文档与资产仅作归档参考，不作为当前下载对象。后续维护以正式版状态、公开内容隐私审查和已知问题记录为准；不在本次工作中 push、tag 或重打包。`cli_startup_latency_regression` 仍是非阻断 P1，等待进一步真实用户环境证据。
+`0.2.0` 以源码发布；历史 RC2 文档与 `0.1.0` 便携包仅作归档，不作为这次更新的下载物，也不重打包。`cli_startup_latency_regression` 仍是非阻断 P1。
 
 ## 5. 当前工作树注意事项
 

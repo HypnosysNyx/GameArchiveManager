@@ -2,9 +2,9 @@
 
 ## 当前范围
 
-GameArchiveManager 是面向 Windows 的游戏资源扫描、分析和递归解压管理器。当前版本以 Python 标准库为主，通过外部 7-Zip、WinRAR 和 LZ4 Adapter执行已验证的解压计划；没有 GUI，不会自动下载或安装工具。
+GameArchiveManager 是面向 Windows 的游戏资源扫描、分析和递归解压管理器。当前版本以 Python 标准库为主，通过外部 7-Zip、WinRAR 和 LZ4 Adapter执行已验证的解压计划。缺少 7-Zip 或 `lz4.exe` 时先询问，同意后才从官方发布安装。图形窗口在 `gui/app.py`，命令行仍从 `main.py` 进入。
 
-`main.py` 是纯CLI adapter：提供主菜单、批量路径收集、分析预览、用户确认和结果展示。完整的任务执行、报告、历史、日志和安全清理流程仍由`GameArchiveService`提供。
+`main.py` 是命令行入口：提供主菜单、批量路径收集、分析预览、用户确认和结果展示。`gui/app.py` 使用同一个 `GameArchiveService`。完整的任务执行、报告、历史、日志和安全清理流程仍由`GameArchiveService`提供。
 
 ## 模块职责
 
@@ -14,22 +14,22 @@ GameArchiveManager 是面向 Windows 的游戏资源扫描、分析和递归解�
 | `task` | 定义 Task、任务状态、只读分析流程和任务级递归执行入口 |
 | `scanner` | 扫描文件、目录、空目录密码线索；递归发现新压缩包 |
 | `analyzer` | 读取文件头，识别 ZIP、RAR、7Z、LZ4、复合容器及受宿主策略约束的嵌入归档 |
-| `rules` | 提供 Android/AZ/安卓平台规则，以及真实归档格式之上的 ContainerRole 自动执行策略 |
+| `rules` | 提供 Android、AZ、PC 平台规则，以及真实归档格式之上的 ContainerRole 自动执行策略 |
 | `config` | 定义 Settings，并从可选 `config.json` 加载受支持字段 |
 | `security` | 执行输入文件大小检查、ZIP 内容预检查和解压后目录检查 |
 | `execution` | 根据真实格式生成 `ExtractionPlan`，不直接调用工具 |
 | `tools` | 发现和保存 7-Zip、WinRAR、LZ4 的工具路径状态 |
 | `extractor` | 通过 Dispatcher 调度 7-Zip、WinRAR、LZ4 Adapter，并执行受控复合容器阶段；不负责任务级递归、整理或删除 |
 | `coordinator` | 串联单个压缩包的分析、安全检查、计划、解压和密码恢复 |
-| `password` | 保存密码候选，计算候选分数并排序；不保存到数据库 |
-| `recovery` | 有限次数选择密码并连接 Extractor；不记录成功密码 |
+| `password` | 保存密码候选，计算候选分数并排序；用 Windows DPAPI 加密保存已验证密码到本机用户目录 |
+| `recovery` | 有限次数选择密码并连接 Extractor；成功密码交给 SessionPasswordStore |
 | `pipeline` | 管理递归压缩包队列、深度、数量、重复路径和执行记录 |
 | `report` | 将 TaskExecutionResult 或 PipelineResult 转为统一 TaskReport |
 | `history` | 将安全摘要保存为 JSON，不保存密码和完整错误日志 |
 | `logging_system` | 为每个服务任务创建脱敏日志文件 |
 | `cleanup` | RuntimeTracker 记录本次运行拥有的技术目录；CleanupManager 仅删除通过边界检查并已授权的目录 |
 | `organizer` | 判断最终内容根、折叠技术执行 lineage 为 DeliveryUnit、检测重复内容，并安全交付到 `GameArchive_Output` |
-| `ui` | 当前仅保留包结构；尚未实现 GUI |
+| `gui` | 桌面窗口：外观、语言、窗口位置、设置和任务启动 |
 
 ## 数据流程
 
@@ -74,7 +74,7 @@ GameLogger 在 ApplicationService 层记录任务开始、Task 创建、执行�
 ```text
 Application start
   → Settings / ToolManager / HistoryStorage / GameArchiveService
-  → SessionPasswordStore
+  → SessionPasswordStore（`%LOCALAPPDATA%\\GameArchiveManager\\passwords.json`，DPAPI 加密）
   → CliSessionController main menu
        → new Task (fresh TaskAnalysisResult / Pipeline / Guard / RuntimeTracker)
        → TaskReport
@@ -85,7 +85,7 @@ Application start
 
 Session-scoped对象：Settings、ToolManager、HistoryStorage、GameArchiveService、SessionPasswordStore、CLI controller。Task-scoped对象：Task、analysis result、Pipeline/queue/Guard、RuntimeTracker/cleanup ownership、TaskReport、task password candidates、cancel/progress/output planning state。`ExtractionPipelineRunner`可以作为无任务状态的协作对象复用，但其`run()`每次必须新建Pipeline和Guard计数。
 
-只有实际解压成功的密码才进入当前进程的SessionPasswordStore。错误密码不保存；任务目录中的空文件夹候选每次重新分析，不跨任务复用。
+只有实际解压成功的密码才进入 `SessionPasswordStore`。它使用当前 Windows 用户的 DPAPI 加密写入本机密码库，重启后仍可作为候选使用；错误密码不保存。任务目录中的空文件夹候选每次重新分析，不跨任务复用。密码明文不写入日志、报告或历史。
 
 ## Task 生命周期
 
@@ -156,13 +156,10 @@ SUCCESS 时停止；WRONG_PASSWORD 时继续
 - Android 来源候选不会删除，只会降低评分。
 - 最大尝试次数由 `max_password_attempts` 限制，绝对上限为 100。
 - 密码明文不会写入 TaskReport、HistoryStorage 或 GameLogger。
-- 当前没有数据库密码库，也不会记录密码成功次数。
+- 密码库仅保存在当前 Windows 用户本机的 DPAPI 加密文件中，不上传，也不记录密码成功次数。
 
 ## 当前未实现
 
-- GUI 和拖放操作
-- 专用 GUI（当前 CLI 已完整连接 ApplicationService）
-- 持久化密码库
 - RAR、7Z 内部文件列表的可靠预检查
 - 回收站删除和未经用户确认的历史目录清理
 - 暂停、恢复和持久化 Pipeline 队列

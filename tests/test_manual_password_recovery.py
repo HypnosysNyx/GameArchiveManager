@@ -181,7 +181,7 @@ class ManualPasswordRecoveryTests(unittest.TestCase):
             archive = self._archive(root)
             before = hashlib.sha256(archive.read_bytes()).hexdigest()
             coordinator, dispatcher = self._coordinator()
-            store = SessionPasswordStore()
+            store = SessionPasswordStore(root / "passwords.json")
             callback = callback_from([
                 ManualPasswordResponse(
                     ManualPasswordAction.INPUT_PASSWORD, TEST_PASSWORD
@@ -209,7 +209,7 @@ class ManualPasswordRecoveryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             archive = self._archive(Path(temp_dir))
             coordinator, dispatcher = self._coordinator()
-            store = SessionPasswordStore()
+            store = SessionPasswordStore(Path(temp_dir) / "passwords.json")
             callback = callback_from([
                 ManualPasswordResponse(ManualPasswordAction.INPUT_PASSWORD, "wrong"),
                 ManualPasswordResponse(
@@ -248,7 +248,7 @@ class ManualPasswordRecoveryTests(unittest.TestCase):
             first_archive = self._archive(first_root)
             second_archive = self._archive(second_root)
             coordinator, _ = self._coordinator()
-            store = SessionPasswordStore()
+            store = SessionPasswordStore(root / "passwords.json")
             analyzer = StaticTaskAnalyzer(first_archive)
             runner = ExtractionPipelineRunner(coordinator=coordinator)
             executor = TaskExecutor(

@@ -35,6 +35,7 @@ from history.storage import HistoryStorage
 from logging_system.logger import GameLogger
 from organizer.output_organizer import OutputOrganizer
 from password.models import PasswordCandidate, PasswordSource
+from password.session_store import SessionPasswordStore
 from pipeline.extraction_runner import ExtractionPipelineRunner
 from pipeline.extraction_pipeline import ExtractionPipeline
 from pipeline.models import (
@@ -695,7 +696,7 @@ class GameArchiveIntegrationTests(unittest.TestCase):
         from version import APP_NAME, APP_VERSION, BUILD_TYPE
 
         self.assertEqual(APP_NAME, "GameArchiveManager")
-        self.assertEqual(APP_VERSION, "0.1.0")
+        self.assertEqual(APP_VERSION, "0.2.0")
         self.assertEqual(BUILD_TYPE, "Release")
 
     def test_main_confirmation_executes_application_service(self) -> None:
@@ -755,7 +756,7 @@ class GameArchiveIntegrationTests(unittest.TestCase):
         )
         output = stdout.getvalue()
         self.assertIn("GameArchiveManager", output)
-        self.assertIn("版本: 0.1.0", output)
+        self.assertIn("版本: 0.2.0", output)
         self.assertIn("7-Zip:", output)
         self.assertIn("WinRAR:", output)
         self.assertIn("LZ4:", output)
@@ -1383,7 +1384,7 @@ class GameArchiveIntegrationTests(unittest.TestCase):
 
             output = stdout.getvalue()
             self.assertIn("GameArchiveManager", output)
-            self.assertIn("版本: 0.1.0", output)
+            self.assertIn("版本: 0.2.0", output)
             self.assertIn("构建类型: Release", output)
             for display_name, tool_path in (
                 ("7-Zip", tool_paths[ToolName.SEVEN_ZIP]),
@@ -2837,6 +2838,9 @@ class FullWorkflowTest(unittest.TestCase):
                 coordinator=coordinator,
                 pipeline_runner=pipeline_runner,
                 settings=settings,
+            )
+            task_executor.session_password_store = SessionPasswordStore(
+                root / "passwords.json"
             )
             history_file = root / "history" / "task_history.json"
             history_storage = HistoryStorage(history_file)
