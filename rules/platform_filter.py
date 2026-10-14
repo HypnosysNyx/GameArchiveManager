@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from config.settings import Settings
-from rules.platform_rules import is_android_name, is_az_name
+from rules.platform_rules import is_android_name, is_az_name, is_pc_name
 
 
 @dataclass(frozen=True)
@@ -41,6 +41,11 @@ class PlatformFilter:
                 return PlatformFilterResult(
                     skipped=True,
                     reason=f"路径名称命中 AZ 忽略规则: {part}",
+                )
+            if active_settings.ignore_pc and is_pc_name(part):
+                return PlatformFilterResult(
+                    skipped=True,
+                    reason=f"路径名称命中 PC 忽略规则: {part}",
                 )
         return PlatformFilterResult(skipped=False)
 

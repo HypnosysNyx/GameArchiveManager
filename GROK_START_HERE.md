@@ -7,18 +7,18 @@
 ## 1. 当前权威状态
 
 - 项目：GameArchiveManager
-- 版本：`0.1.0`
-- 构建类型：`Release Candidate`
-- 阶段：RC / Core Feature Freeze
-- 自动测试最低基线：224（当前已核验 234，其中 7 项因缺少可信 `lz4.exe` 跳过）
-- 本次交接前验证：234 tests / OK（skipped=7）
-- 项目治理校验：PASS
+- 版本：`0.2.0`
+- 构建类型：`Release`
+- 阶段：0.2.0 源码更新。这次发布不附带新的安装包或 exe。
+- 自动测试最低基线：224（当前已核验 262，2026-10-14 全部通过，没有跳过）
+- 本次交接前验证：262 tests / OK
+- 项目治理校验：以 `scripts/verify_project_state.py` 的当次结果为准
 - 真实样本 Test Game 1–6：项目状态记录为 PASS
-- Clean Windows 11 VM：`PASS`（当前 RC2 ZIP `BA3A9ADD…` / EXE `67DF840B…`；`clean_windows_11_vm=true`）
-- 当前发布结论：`rc_readiness.py` 预期 **GO**，表示 RC 门禁具备最终评审条件；仍是 0.1.0 Release Candidate，Latest 和 GO 都不等于已授权稳定版发布
+- `clean_windows_11_vm` 保持 `true`。这是已有门禁记录，不是这次源码发布的新打包验收。
+- 当前发布：`0.2.0` 源码。`0.1.0` 便携包保持原样。
 - Windows 10 VM：可选，未验证
 
-`version.py` 是应用版本信息的唯一代码权威来源；`project_state.json` 是项目状态、测试基线和 Release Gate 的机器可读权威来源。不要把 RC 改成正式 Release，也不要把尚未完成的 VM 检查标成通过。
+`version.py` 是应用版本信息的唯一代码权威来源；`project_state.json` 是项目状态、测试基线和 Release Gate 的机器可读权威来源。不要把 `BUILD_TYPE` 改成别的值，也不要改写 `clean_windows_11_vm`。
 
 ## 2. 接管后的强制启动协议
 

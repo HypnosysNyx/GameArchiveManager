@@ -48,7 +48,7 @@ class ReleaseBuildTests(unittest.TestCase):
             report = service.execute_task(root)
 
             self.assertEqual(APP_NAME, "GameArchiveManager")
-            self.assertEqual(APP_VERSION, "0.1.0")
+            self.assertEqual(APP_VERSION, "0.2.0")
             self.assertEqual(BUILD_TYPE, "Release")
             self.assertEqual(report.app_version, APP_VERSION)
             self.assertEqual(report.build_type, BUILD_TYPE)

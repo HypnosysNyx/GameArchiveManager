@@ -140,8 +140,9 @@ class ProjectGovernanceTests(unittest.TestCase):
             root = Path(temp_dir)
             state_path = self._fixture(root)
             status_path = root / "docs" / "CURRENT_STATUS.md"
+            current_version = self.state["project"]["version"]
             status_path.write_text(
-                status_path.read_text(encoding="utf-8").replace("0.1.0", "9.9.9"),
+                status_path.read_text(encoding="utf-8").replace(current_version, "9.9.9"),
                 encoding="utf-8",
             )
             result = ProjectVerifier(root, state_path).check_current_status(self.state)

@@ -17,6 +17,7 @@ from scanner.initial_scan_boundary import (
     InitialScanDiagnostics,
     InitialScanSpaceResolver,
 )
+from scanner.scanner import Scanner
 
 
 class ArchiveScanMode(str, Enum):
@@ -46,6 +47,7 @@ class ArchiveFinder:
         self.container_role_policy = container_role_policy or ContainerRolePolicy()
         self.last_scan_diagnostics = InitialScanDiagnostics()
         self.last_container_role_decisions: list[ContainerRoleDecision] = []
+        self._analysis_cache: dict[Path, tuple[tuple[int, ...], ArchiveInfo]] = {}
 
     def find(
         self,
@@ -78,8 +80,24 @@ class ArchiveFinder:
 
         archives: list[ArchiveInfo] = []
         seen_volume_groups: set[str] = set()
+        seen_files: set[Path] = set()
+        walk_entries: list[
+            tuple[Path, tuple[str, ...], tuple[str, ...], tuple[int, ...]]
+        ] = []
         for current_path, directory_names, file_names in os.walk(root):
             current = Path(current_path)
+            try:
+                directory_fingerprint = Scanner._stat_fingerprint(current.stat())
+            except OSError:
+                directory_fingerprint = ()
+            walk_entries.append(
+                (
+                    current,
+                    tuple(directory_names),
+                    tuple(file_names),
+                    directory_fingerprint,
+                )
+            )
             if scan_mode is ArchiveScanMode.INITIAL_SCAN:
                 self.last_scan_diagnostics.visited_directory_count += 1
                 allowed_directories: list[str] = []
@@ -107,8 +125,9 @@ class ArchiveFinder:
             file_names.sort()
             for file_name in file_names:
                 file_path = current / file_name
+                seen_files.add(file_path)
                 try:
-                    archive_info = self.analyzer.analyze(file_path)
+                    archive_info = self._analyze(file_path)
                 except OSError:
                     continue
                 if not self._is_confirmed_archive(archive_info):
@@ -137,6 +156,17 @@ class ArchiveFinder:
                             explicit=False,
                         )
                     )
+        self._analysis_cache = {
+            path: cached
+            for path, cached in self._analysis_cache.items()
+            if path in seen_files
+        }
+        pruned_directories = {
+            boundary.path
+            for boundary in self.last_scan_diagnostics.boundaries
+            if not boundary.should_descend
+        }
+        Scanner._remember_walk(root, pruned_directories, walk_entries)
         return archives
 
     def _find_explicit_file(
@@ -144,7 +174,7 @@ class ArchiveFinder:
     ) -> list[ArchiveInfo]:
         if scan_mode is not ArchiveScanMode.INITIAL_SCAN:
             raise NotADirectoryError(f"扫描路径不是目录: {path}")
-        archive_info = self.analyzer.analyze(path)
+        archive_info = self._analyze(path)
         if not self._is_confirmed_archive(archive_info):
             return []
         decision = self.container_role_policy.classify(
@@ -163,6 +193,22 @@ class ArchiveFinder:
             )
         )
         return [archive_info]
+
+    def _analyze(self, path: Path) -> ArchiveInfo:
+        """Reuse analysis only while the same path still identifies the same file."""
+        before = path.stat()
+        fingerprint = Scanner._stat_fingerprint(before)
+        cached = self._analysis_cache.get(path)
+        if cached is not None and cached[0] == fingerprint:
+            return cached[1]
+
+        archive_info = self.analyzer.analyze(path)
+        after_fingerprint = Scanner._stat_fingerprint(path.stat())
+        if after_fingerprint == fingerprint:
+            self._analysis_cache[path] = (fingerprint, archive_info)
+        else:
+            self._analysis_cache.pop(path, None)
+        return archive_info
 
     @classmethod
     def _is_confirmed_archive(cls, archive_info: ArchiveInfo) -> bool:

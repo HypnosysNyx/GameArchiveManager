@@ -43,6 +43,8 @@ class ConfigLoader:
             return Settings()
 
         valid_values: dict[str, object] = {}
+        theme_mode = "auto"
+        ui_language = "zh_CN"
         validators = self._validators()
 
         for field_name, value in data.items():
@@ -55,6 +57,12 @@ class ConfigLoader:
                     f"配置值无效，已使用默认值: {field_name}={value!r}"
                 )
                 continue
+            if field_name == "theme_mode":
+                theme_mode = value
+                continue
+            if field_name == "ui_language":
+                ui_language = value
+                continue
             if field_name in self.TOOL_PATH_FIELDS and value is not None:
                 tool_path = Path(value).expanduser()
                 if not tool_path.is_absolute():
@@ -64,7 +72,12 @@ class ConfigLoader:
                 valid_values[field_name] = value
 
         # 只传入验证通过的字段，其余字段自然保留 dataclass 默认值。
-        return Settings(**valid_values)
+        settings = Settings(**valid_values)
+        # ``theme_mode`` is a GUI-only preference, so keep it available to
+        # callers without extending the runtime Settings data model.
+        settings.theme_mode = theme_mode
+        settings.ui_language = ui_language
+        return settings
 
     @staticmethod
     def _validators() -> dict[str, Callable[[object], bool]]:
@@ -102,9 +115,12 @@ class ConfigLoader:
             "max_total_extracted_size_mb": is_optional_non_negative_integer,
             "ignore_android": lambda value: type(value) is bool,
             "ignore_AZ": lambda value: type(value) is bool,
+            "ignore_pc": lambda value: type(value) is bool,
             "seven_zip_path": is_optional_path,
             "winrar_path": is_optional_path,
             "lz4_path": is_optional_path,
+            "theme_mode": lambda value: value in {"auto", "light", "dark"},
+            "ui_language": lambda value: value in {"zh_CN", "en"},
         }
 
     def _warn(self, message: str) -> None:

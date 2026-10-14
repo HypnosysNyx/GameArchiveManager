@@ -1,10 +1,11 @@
 """INITIAL_SCAN boundary, explicit-input, and task-level guard tests."""
 
+import os
 import tempfile
 import unittest
 import zipfile
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from application.app_service import GameArchiveService
 from config.settings import Settings
@@ -120,6 +121,42 @@ class InitialScanBoundaryTests(unittest.TestCase):
             )
 
             self.assertEqual([item.file_path for item in results], expected)
+
+    def test_task_analysis_reuses_the_initial_directory_walk(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            archive = root / "downloads" / "game.zip"
+            self._zip(archive)
+            real_walk = os.walk
+
+            with patch("scanner.archive_finder.os.walk", wraps=real_walk) as walk:
+                analysis = TaskAnalyzer().analyze(Task(task_path=root))
+
+            self.assertEqual(
+                [item.file_path for item in analysis.archive_results],
+                [archive.resolve()],
+            )
+            self.assertEqual(walk.call_count, 1)
+
+    def test_unchanged_file_analysis_is_reused_and_changed_file_is_reanalyzed(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            archive = root / "game.7z"
+            archive.write_bytes(b"7z\xbc\xaf\x27\x1c" + b"test")
+            finder = ArchiveFinder()
+            finder.analyzer.analyze = Mock(wraps=finder.analyzer.analyze)
+
+            finder.find(root, ArchiveScanMode.INITIAL_SCAN)
+            finder.find(root, ArchiveScanMode.INITIAL_SCAN)
+
+            self.assertEqual(finder.analyzer.analyze.call_count, 1)
+
+            archive.write_bytes(b"7z\xbc\xaf\x27\x1c" + b"changed")
+            finder.find(root, ArchiveScanMode.INITIAL_SCAN)
+
+            self.assertEqual(finder.analyzer.analyze.call_count, 2)
 
 
 class InitialArchiveTaskGuardTests(unittest.TestCase):

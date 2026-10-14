@@ -12,6 +12,7 @@ class Settings:
     # 只有用户明确开启对应选项时才进行过滤。
     ignore_android: bool = False
     ignore_AZ: bool = False
+    ignore_pc: bool = False
     default_platform: str = "PC"
 
     # Cleanup settings：默认不删除任何用户文件。
