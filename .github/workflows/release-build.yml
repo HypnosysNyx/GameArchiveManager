@@ -1,0 +1,158 @@
+name: Release candidate artifacts (Windows and Linux)
+
+# Build artifacts only. Running this workflow never creates a tag or release.
+on:
+  workflow_dispatch:
+    inputs:
+      expected_version:
+        description: Required version.py APP_VERSION (no v prefix)
+        type: string
+        required: true
+        default: "0.3.0rc1"
+
+permissions:
+  contents: read
+
+env:
+  PYTHONDONTWRITEBYTECODE: "1"
+  PYTHONUTF8: "1"
+  PYTHONHASHSEED: "0"
+  EXPECTED_VERSION: ${{ inputs.expected_version }}
+
+jobs:
+  windows:
+    name: Windows x64 GUI and CLI onedir zip
+    runs-on: windows-2022
+    timeout-minutes: 30
+    steps:
+      - name: Check out selected source ref
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up x64 Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12.10"
+          architecture: x64
+      # Local equivalent: install the exact dependency set in this step, then
+      # Then: ./scripts/build_windows_release.ps1 -ExpectedVersion 0.3.0
+      - name: Install Windows build dependencies
+        shell: pwsh
+        run: >-
+          python -m pip install --disable-pip-version-check
+          -r requirements-build.txt pyinstaller-hooks-contrib==2026.6
+          altgraph==0.17.4 packaging==24.2 pefile==2023.2.7
+          pywin32-ctypes==0.2.3 setuptools==77.0.3
+      - name: Build isolated candidate package
+        id: package
+        shell: pwsh
+        run: ./scripts/build_windows_release.ps1 -ExpectedVersion $env:EXPECTED_VERSION
+      - name: Upload Windows zip and checksum
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: GameArchiveManager-${{ steps.package.outputs.version }}-windows-x64-candidate-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ steps.package.outputs.zip_path }}
+            ${{ steps.package.outputs.checksum_path }}
+          if-no-files-found: error
+          # Only these inspected files; their parent .vm_gate is intentionally hidden.
+          include-hidden-files: true
+          retention-days: 14
+          compression-level: 0
+
+  linux:
+    name: Ubuntu native wheel and installed-entrypoint smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out selected source ref
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12.10"
+          architecture: x64
+      # Native archive tools are runner dependencies, never wheel contents.
+      # These same commands can be used on a clean Ubuntu 24.04 machine.
+      - name: Install Linux system and wheel build dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y 7zip lz4 python3-tk xvfb xauth
+          python -m venv "$RUNNER_TEMP/gam-wheel-build"
+          "$RUNNER_TEMP/gam-wheel-build/bin/python" -m pip install \
+            build==1.2.2.post1 setuptools==77.0.3 wheel==0.45.1 \
+            packaging==24.2 pyproject-hooks==1.2.0
+      - name: Validate version and build wheel
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B - <<'PY'
+          import os, re
+          from version import APP_VERSION
+          assert re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+(?:rc[0-9]+)?", APP_VERSION), APP_VERSION
+          assert APP_VERSION == os.environ["EXPECTED_VERSION"], (APP_VERSION, os.environ["EXPECTED_VERSION"])
+          PY
+          export SOURCE_DATE_EPOCH="$(git show -s --format=%ct HEAD)"
+          candidate="$GITHUB_WORKSPACE/.vm_gate/release_artifacts/linux-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          mkdir -p "$GITHUB_WORKSPACE/.vm_gate/release_artifacts"
+          mkdir "$candidate"
+          echo "WHEEL_DIR=$candidate" >> "$GITHUB_ENV"
+          "$RUNNER_TEMP/gam-wheel-build/bin/python" -m build --wheel --no-isolation --outdir "$candidate"
+      - name: Inspect wheel contents against product allowlist
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B - <<'PY'
+          import os
+          from pathlib import Path, PurePosixPath
+          from zipfile import ZipFile
+          from version import APP_VERSION
+
+          allowed = {"analyzer", "application", "cleanup", "config", "coordinator", "execution",
+                     "extractor", "gui", "history", "logging_system", "organizer", "password",
+                     "pipeline", "recovery", "report", "rules", "scanner", "security", "task", "tools"}
+          wheels = list(Path(os.environ["WHEEL_DIR"]).glob("*.whl"))
+          assert len(wheels) == 1, wheels
+          metadata = f"game_archive_manager-{APP_VERSION}.dist-info"
+          allowed_metadata = {"METADATA", "WHEEL", "RECORD", "entry_points.txt", "top_level.txt", "licenses/LICENSE"}
+          with ZipFile(wheels[0]) as wheel:
+              names = wheel.namelist()
+              assert len(names) == len(set(names)), "Duplicate wheel paths"
+              for name in names:
+                  path = PurePosixPath(name)
+                  assert not path.is_absolute() and ".." not in path.parts and "\\" not in name, name
+                  if path.parts[0] == metadata:
+                      assert "/".join(path.parts[1:]) in allowed_metadata, name
+                  else:
+                      assert name in {"main.py", "version.py"} or (path.parts[0] in allowed and path.suffix == ".py"), name
+                  assert not (wheel.getinfo(name).external_attr >> 16) & 0o170000 == 0o120000, name
+              assert {"main.py", "version.py", "gui/app.py", f"{metadata}/entry_points.txt"} <= set(names)
+              assert wheel.testzip() is None, "Wheel CRC failure"
+          print(f"PASS wheel allowlist: {len(names)} entries")
+          PY
+      - name: Smoke installed wheel outside source tree under Xvfb
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m venv "$RUNNER_TEMP/gam-wheel-installed"
+          "$RUNNER_TEMP/gam-wheel-installed/bin/python" -m pip install --no-deps "$WHEEL_DIR"/*.whl
+          cp scripts/linux_smoke.py "$RUNNER_TEMP/gam-release-smoke.py"
+          cd "$RUNNER_TEMP"
+          unset PYTHONPATH
+          xvfb-run -a "$RUNNER_TEMP/gam-wheel-installed/bin/python" -I -B gam-release-smoke.py --installed
+          cd "$WHEEL_DIR"
+          sha256sum -- *.whl > SHA256SUMS
+      - name: Upload Linux wheel and checksum
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: GameArchiveManager-linux-wheel-candidate-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.WHEEL_DIR }}/*.whl
+            ${{ env.WHEEL_DIR }}/SHA256SUMS
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 14

@@ -1,5 +1,15 @@
 # GameArchiveManager Known Issues
 
+## 2026-11-02 内嵌候选解析剩余验证
+
+- Status: SYNTHETIC_REGRESSION_VERIFIED / REAL_SAMPLE_NEEDS_VERIFICATION。
+- Affected modules: EmbeddedArchiveDetector / EmbeddedExtractor / EmbeddedResolver / EmbeddedValidator。
+- Real sample: 原 Sample 8 宿主已删除，精确假阳性 offset 未证明，无法重放；合成测试不等于真实应用端到端成功。
+- Risk: 搜索/切片/工具工作超限或密码未解决返回 EMBEDDED_INCOMPLETE；多 GiB 性能、磁盘争用未实测。磁盘保留/输出配额是轮询检查，非 OS 硬配额。内嵌验证需要已安装并验证的 7-Zip，不可用时保留未完成状态。
+- Current workaround: 保留新样本的原宿主补齐端到端验证，按 CURRENT_STATUS 原因码处理未完成。
+- Do not fix by: 不选择最后/最大/最靠近 EOF 的签名，不以 listing 或局部 header CRC 作为完整性证明，不放宽 CRC、路径、哈希和清理所有权检查。
+
+
 > 当前优先级摘要以 `CURRENT_STATUS.md` 为准。每项必须记录Status、Affected modules、Real sample、Risk、Current workaround和Do not fix by。
 
 ## Resolved P0

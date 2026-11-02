@@ -18,6 +18,10 @@ class EmbeddedValidationResult(str, Enum):
 class EmbeddedDiagnosticReason(str, Enum):
     """A bounded, password-free reason for the latest detector decision."""
 
+    RAW_HIT_LIMIT_REACHED = "RAW_HIT_LIMIT_REACHED"
+    CANDIDATE_LIMIT_REACHED = "CANDIDATE_LIMIT_REACHED"
+    CANCELLED = "CANCELLED"
+    VALIDATION_LIMIT_REACHED = "VALIDATION_LIMIT_REACHED"
     HOST_TYPE_DISABLED = "HOST_TYPE_DISABLED"
     NO_SIGNATURE = "NO_SIGNATURE"
     SCAN_LIMIT_REACHED = "SCAN_LIMIT_REACHED"
@@ -73,6 +77,8 @@ class EmbeddedArchiveDetector:
         self,
         max_file_size_bytes: int | None = None,
         max_scan_bytes: int | None = None,
+        max_raw_hits: int = 4096,
+        max_candidates: int = 8,
     ) -> None:
         # Older callers may still pass max_file_size_bytes. It is retained as
         # an attribute only; max_scan_bytes is the sole I/O bound.
@@ -88,6 +94,10 @@ class EmbeddedArchiveDetector:
         )
         if self.max_file_size_bytes <= 0 or self.max_scan_bytes <= 0:
             raise ValueError("embedded scan limits must be greater than zero")
+        if max_raw_hits <= 0 or max_candidates <= 0:
+            raise ValueError("candidate limits must be positive")
+        self.max_raw_hits = min(max_raw_hits, 4096)
+        self.max_candidates = min(max_candidates, 8)
         self.last_diagnostic: EmbeddedDetectionDiagnostic | None = None
 
     def detect(self, file_path: str | Path) -> EmbeddedArchiveCandidate | None:
@@ -102,88 +112,66 @@ class EmbeddedArchiveDetector:
             None,
         )
 
-    def find_candidates(
-        self, file_path: str | Path
-    ) -> list[EmbeddedArchiveCandidate]:
-        """Stream only the configured prefix and return diagnostic candidates."""
+    def find_candidates(self, file_path: str | Path) -> list[EmbeddedArchiveCandidate]:
+        """Compatibility preview: stop at the first provisional candidate."""
+        found = []
+        for candidate in self.iter_candidates(file_path, include_invalid=True):
+            found.append(candidate)
+            if candidate.validation_result in self.VALID_RESULTS:
+                break
+        return found
+
+    def iter_candidates(self, file_path, *, cancelled=lambda: False,
+                        include_invalid=False):
+        """Lazy host-scoped enumeration; resuming never resets hit/candidate budgets."""
         path = Path(file_path).expanduser().resolve()
         self.last_diagnostic = None
         if not path.is_file():
             self._record(path, EmbeddedDiagnosticReason.INVALID_STRUCTURE)
-            return []
-        try:
-            file_size = path.stat().st_size
-        except OSError:
-            self._record(path, EmbeddedDiagnosticReason.INVALID_STRUCTURE)
-            return []
-        if file_size <= 0:
-            self._record(
-                path,
-                EmbeddedDiagnosticReason.INVALID_STRUCTURE,
-                file_size=file_size,
-            )
-            return []
-
-        scan_limit = min(file_size, self.max_scan_bytes)
-        candidates: list[EmbeddedArchiveCandidate] = []
+            return
+        size = path.stat().st_size
+        limit = min(size, self.max_scan_bytes)
+        raw_hits = plausible = 0
+        last_reason = EmbeddedDiagnosticReason.NO_SIGNATURE
         with path.open("rb") as source:
-            for offset, archive_format in self._signature_candidates(
-                source, scan_limit
-            ):
-                validation_result, reason = self.validate_candidate(
-                    path, offset, archive_format
-                )
-                candidate = EmbeddedArchiveCandidate(
-                    host_file=path,
-                    offset=offset,
-                    format=archive_format,
-                    confidence=(
-                        1.0 if validation_result in self.VALID_RESULTS else 0.0
-                    ),
-                    validation_result=validation_result,
-                    reason=reason,
-                )
-                candidates.append(candidate)
-                if validation_result in self.VALID_RESULTS:
-                    scanned_bytes = min(
-                        scan_limit,
-                        ((offset // self.CHUNK_SIZE) + 1) * self.CHUNK_SIZE,
-                    )
-                    self._record(
-                        path,
-                        reason,
-                        file_size=file_size,
-                        scanned_bytes=scanned_bytes,
-                        offset=offset,
-                        archive_format=archive_format,
-                    )
-                    # A verified candidate is sufficient; avoid scanning the
-                    # unused remainder of a potentially multi-gigabyte host.
-                    return candidates
-
-        if candidates:
-            last_candidate = candidates[-1]
-            self._record(
-                path,
-                last_candidate.reason,
-                file_size=file_size,
-                scanned_bytes=scan_limit,
-                offset=last_candidate.offset,
-                archive_format=last_candidate.format,
-            )
-        else:
-            reason = (
-                EmbeddedDiagnosticReason.SCAN_LIMIT_REACHED
-                if file_size > scan_limit
-                else EmbeddedDiagnosticReason.NO_SIGNATURE
-            )
-            self._record(
-                path,
-                reason,
-                file_size=file_size,
-                scanned_bytes=scan_limit,
-            )
-        return candidates
+            for offset, fmt in self._signature_candidates(source, limit, cancelled):
+                if cancelled():
+                    self._record(path, EmbeddedDiagnosticReason.CANCELLED, file_size=size)
+                    return
+                if raw_hits >= self.max_raw_hits:
+                    self._record(path, EmbeddedDiagnosticReason.RAW_HIT_LIMIT_REACHED,
+                                 file_size=size, scanned_bytes=min(source.tell(), limit))
+                    return
+                raw_hits += 1
+                result, reason = self.validate_candidate(path, offset, fmt, cancelled=cancelled)
+                if reason in (EmbeddedDiagnosticReason.CANCELLED,
+                              EmbeddedDiagnosticReason.VALIDATION_LIMIT_REACHED):
+                    self._record(path, reason, file_size=size,
+                                 scanned_bytes=min(source.tell(), limit))
+                    return
+                last_reason = reason
+                candidate = EmbeddedArchiveCandidate(path, offset, fmt,
+                    1.0 if result in self.VALID_RESULTS else 0.0, result, reason)
+                if result in self.VALID_RESULTS:
+                    if plausible >= self.max_candidates:
+                        self._record(path, EmbeddedDiagnosticReason.CANDIDATE_LIMIT_REACHED,
+                                     file_size=size, scanned_bytes=min(source.tell(), limit))
+                        return
+                    plausible += 1
+                    self._record(path, reason, file_size=size,
+                                 scanned_bytes=min(source.tell(), limit),
+                                 offset=offset, archive_format=fmt)
+                    yield candidate
+                    if plausible >= self.max_candidates:
+                        self._record(path, EmbeddedDiagnosticReason.CANDIDATE_LIMIT_REACHED,
+                                     file_size=size, scanned_bytes=min(source.tell(), limit))
+                        return
+                elif include_invalid:
+                    yield candidate
+            scanned_bytes = min(source.tell(), limit)
+        reason = (EmbeddedDiagnosticReason.CANCELLED if cancelled() else
+                  EmbeddedDiagnosticReason.SCAN_LIMIT_REACHED if size > limit else last_reason)
+        self._record(path, reason, file_size=size, scanned_bytes=scanned_bytes)
 
     def record_host_type_disabled(self, file_path: str | Path) -> None:
         """Record that ArchiveAnalyzer intentionally skipped this host type."""
@@ -199,7 +187,7 @@ class EmbeddedArchiveDetector:
         )
 
     def validate_candidate(
-        self, path: Path, offset: int, archive_format: str
+        self, path: Path, offset: int, archive_format: str, *, cancelled=lambda: False
     ) -> tuple[EmbeddedValidationResult, EmbeddedDiagnosticReason]:
         """Validate one marker while preserving the exact bounded reason."""
         try:
@@ -215,7 +203,7 @@ class EmbeddedArchiveDetector:
             if archive_format == "RAR":
                 return self._validate_rar_details(path, offset)
             if archive_format == "7Z":
-                return self._validate_7z_details(path, offset)
+                return self._validate_7z_details(path, offset, cancelled)
         except (OSError, struct.error, ValueError):
             return (
                 EmbeddedValidationResult.INVALID_STRUCTURE,
@@ -263,7 +251,7 @@ class EmbeddedArchiveDetector:
             return "UNKNOWN"
 
     @classmethod
-    def _signature_candidates(cls, source, scan_limit: int):
+    def _signature_candidates(cls, source, scan_limit: int, cancelled=lambda: False):
         """Yield marker positions in file order while retaining chunk overlap."""
         max_signature_size = max(
             len(signature)
@@ -273,29 +261,27 @@ class EmbeddedArchiveDetector:
         overlap = max_signature_size - 1
         carry = b""
         bytes_read = 0
-        emitted: set[tuple[int, str]] = set()
-
+        last_offset = -1
         while bytes_read < scan_limit:
+            if cancelled():
+                return
             chunk = source.read(min(cls.CHUNK_SIZE, scan_limit - bytes_read))
             if not chunk:
                 break
             data = carry + chunk
             data_offset = bytes_read - len(carry)
-            chunk_candidates: list[tuple[int, str]] = []
-            for archive_format, signatures in cls.SIGNATURES.items():
-                for signature in signatures:
-                    start = 0
-                    while True:
-                        position = data.find(signature, start)
-                        if position < 0:
-                            break
-                        absolute_offset = data_offset + position
-                        candidate = (absolute_offset, archive_format)
-                        if absolute_offset > 0 and candidate not in emitted:
-                            emitted.add(candidate)
-                            chunk_candidates.append(candidate)
-                        start = position + 1
-            yield from sorted(chunk_candidates)
+            # One pending hit per signature, rather than collecting all hits
+            # from hostile chunks before the raw-hit limit can be enforced.
+            signatures = [(fmt, sig) for fmt, sigs in cls.SIGNATURES.items() for sig in sigs]
+            positions = [data.find(sig) for _, sig in signatures]
+            while any(pos >= 0 for pos in positions):
+                pos, index = min((pos, i) for i, pos in enumerate(positions) if pos >= 0)
+                fmt, sig = signatures[index]
+                absolute = data_offset + pos
+                if absolute > max(0, last_offset):
+                    last_offset = absolute
+                    yield absolute, fmt
+                positions[index] = data.find(sig, pos + 1)
             carry = data[-overlap:] if overlap else b""
             bytes_read += len(chunk)
 
@@ -421,7 +407,7 @@ class EmbeddedArchiveDetector:
 
     @classmethod
     def _validate_7z_details(
-        cls, path: Path, offset: int
+        cls, path: Path, offset: int, cancelled=lambda: False
     ) -> tuple[EmbeddedValidationResult, EmbeddedDiagnosticReason]:
         with path.open("rb") as source:
             source.seek(offset)
@@ -438,10 +424,14 @@ class EmbeddedArchiveDetector:
             file_size = path.stat().st_size
             if next_size <= 0 or next_position + next_size > file_size:
                 return cls._invalid(EmbeddedDiagnosticReason.INVALID_STRUCTURE)
+            if next_size > cls.DEFAULT_MAX_SCAN_BYTES:
+                return cls._invalid(EmbeddedDiagnosticReason.VALIDATION_LIMIT_REACHED)
             source.seek(next_position)
             calculated_crc = 0
             remaining = next_size
             while remaining:
+                if cancelled():
+                    return cls._invalid(EmbeddedDiagnosticReason.CANCELLED)
                 chunk = source.read(min(cls.CHUNK_SIZE, remaining))
                 if not chunk:
                     return cls._invalid(EmbeddedDiagnosticReason.INVALID_STRUCTURE)

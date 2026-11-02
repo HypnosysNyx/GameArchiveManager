@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "game-archive-manager"
+dynamic = ["version"]
+description = "Shared desktop and CLI game-resource archive manager"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+dependencies = []
+
+[project.scripts]
+game-archive-manager = "main:main"
+
+[project.gui-scripts]
+game-archive-manager-gui = "gui.app:main"
+
+[tool.setuptools]
+py-modules = ["main", "version"]
+include-package-data = false
+
+[tool.setuptools.dynamic]
+version = {attr = "version.APP_VERSION"}
+
+# Exact allowlist: never discover tests, scripts, archives, build trees or venvs.
+# gui is an implicit namespace package (no __init__.py).
+[tool.setuptools.packages.find]
+where = ["."]
+namespaces = true
+include = [
+  "analyzer", "application", "cleanup", "config", "coordinator", "execution",
+  "extractor", "gui", "history", "logging_system", "organizer", "password",
+  "pipeline", "recovery", "report", "rules", "scanner", "security", "task", "tools",
+]

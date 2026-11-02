@@ -47,3 +47,52 @@ jobs:
         if: matrix.python-version == '3.12'
         shell: pwsh
         run: python -B -c "from scripts.verify_project_state import ProjectVerifier, print_report; report = ProjectVerifier().verify(run_tests=False); print_report(report); raise SystemExit(0 if report.passed else 1)"
+
+  linux:
+    name: Native Ubuntu tests and installed package
+    runs-on: ubuntu-24.04
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONUTF8: "1"
+      XDG_CONFIG_HOME: ${{ runner.temp }}/gam-config
+      XDG_DATA_HOME: ${{ runner.temp }}/gam-data
+      XDG_STATE_HOME: ${{ runner.temp }}/gam-state
+      XDG_CACHE_HOME: ${{ runner.temp }}/gam-cache
+      DBUS_SESSION_BUS_ADDRESS: unix:path=/nonexistent-gam-test-bus
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Use Ubuntu's Python so python3-tk matches the interpreter exactly.
+      - name: Install native dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y 7zip lz4 python3-tk python3-venv pipx xvfb xauth
+          /usr/bin/python3 -m venv "$RUNNER_TEMP/gam-build"
+          "$RUNNER_TEMP/gam-build/bin/python" -m pip install build
+
+      - name: Run Python tests under Xvfb
+        run: >-
+          xvfb-run -a /usr/bin/python3 -B -m unittest
+          tests.test_linux_support tests.test_password_candidate_boundaries
+          tests.test_platform_default_policy tests.test_platform_filter_boundaries
+          tests.test_release_build_config -v
+
+      - name: Check source launchers and native synthetic extraction
+        run: |
+          bash -n scripts/linux_run.sh
+          bash scripts/linux_run.sh --help
+          printf 'Q\n' | PYTHON=/usr/bin/python3 bash scripts/linux_run.sh --cli
+          xvfb-run -a /usr/bin/python3 -B scripts/linux_smoke.py
+
+      - name: Build wheel
+        run: '"$RUNNER_TEMP/gam-build/bin/python" -m build --wheel --outdir "$RUNNER_TEMP/gam-wheel"'
+
+      - name: Install wheel and check both entry points outside source tree
+        run: |
+          /usr/bin/python3 -m venv "$RUNNER_TEMP/gam-installed"
+          "$RUNNER_TEMP/gam-installed/bin/python" -m pip install --no-deps "$RUNNER_TEMP"/gam-wheel/*.whl
+          cp scripts/linux_smoke.py "$RUNNER_TEMP/gam-installed-smoke.py"
+          cd "$RUNNER_TEMP"
+          unset PYTHONPATH
+          xvfb-run -a "$RUNNER_TEMP/gam-installed/bin/python" -I -B gam-installed-smoke.py --installed

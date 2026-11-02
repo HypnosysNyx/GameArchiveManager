@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import sys
+from tkinter import TclError
 
 from application.runtime_paths import user_data_directory
 
@@ -43,12 +45,74 @@ def _on_screen(x: int, y: int) -> bool:
         return 0 <= x and 0 <= y
 
 
+def fully_visible_geometry(widget, geometry: str) -> str:
+    """Clamp a window rectangle into its nearest monitor work area.
+
+    Unlike checking only the title bar, this keeps the bottom actions visible
+    when a remembered position meets a taller redesigned dialog.
+    """
+    import ctypes
+    import re
+    from ctypes import wintypes
+
+    match = re.fullmatch(r"(\d+)x(\d+)([+-]\d+)([+-]\d+)", geometry)
+    if match is None:
+        return geometry
+    width, height, x, y = (int(part) for part in match.groups())
+    try:
+        class POINT(ctypes.Structure):
+            _fields_ = [("x", wintypes.LONG), ("y", wintypes.LONG)]
+
+        class RECT(ctypes.Structure):
+            _fields_ = [
+                ("left", wintypes.LONG), ("top", wintypes.LONG),
+                ("right", wintypes.LONG), ("bottom", wintypes.LONG),
+            ]
+
+        class MONITORINFO(ctypes.Structure):
+            _fields_ = [
+                ("cbSize", wintypes.DWORD), ("rcMonitor", RECT),
+                ("rcWork", RECT), ("dwFlags", wintypes.DWORD),
+            ]
+
+        user32 = ctypes.windll.user32
+        # Do not set argtypes here: _on_screen uses an equivalent local POINT
+        # structure, and a global argtypes binding would reject that instance.
+        user32.MonitorFromPoint.restype = ctypes.c_void_p
+        user32.GetMonitorInfoW.argtypes = [
+            ctypes.c_void_p, ctypes.POINTER(MONITORINFO)
+        ]
+        user32.GetMonitorInfoW.restype = wintypes.BOOL
+        monitor = user32.MonitorFromPoint(POINT(x + 40, y + 12), 2)
+        info = MONITORINFO()
+        info.cbSize = ctypes.sizeof(info)
+        if not monitor or not user32.GetMonitorInfoW(monitor, ctypes.byref(info)):
+            raise OSError("Unable to query nearest monitor")
+        left, top = int(info.rcWork.left), int(info.rcWork.top)
+        right, bottom = int(info.rcWork.right), int(info.rcWork.bottom)
+    except (AttributeError, OSError, ValueError):
+        # Safe fallback for unit tests and non-Windows hosts.
+        left = top = 0
+        right = int(widget.winfo_screenwidth())
+        bottom = int(widget.winfo_screenheight())
+
+    x = max(left, min(x, right - width))
+    y = max(top, min(y, bottom - height))
+    return f"{width}x{height}{x:+d}{y:+d}"
+
+
 def remember(name: str, widget) -> None:
     """Store the window the user can see right now."""
     try:
         x, y = widget.winfo_x(), widget.winfo_y()
         width, height = widget.winfo_width(), widget.winfo_height()
-        maximized = widget.state() == "zoomed"
+        if sys.platform.startswith("linux"):
+            try:
+                maximized = bool(widget.tk.getboolean(widget.attributes("-zoomed")))
+            except TclError:
+                maximized = False
+        else:
+            maximized = widget.state() == "zoomed"
     except Exception:
         return
     if width < 80 or height < 80:
@@ -97,4 +161,11 @@ def restore_maximized(name: str, widget) -> None:
     except (KeyError, TypeError, ValueError):
         return
     if _on_screen(saved_x, saved_y):
-        widget.state("zoomed")
+        try:
+            if sys.platform.startswith("linux"):
+                widget.attributes("-zoomed", True)
+            else:
+                widget.state("zoomed")
+        except TclError:
+            # Some Linux window managers do not support maximization.
+            return

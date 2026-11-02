@@ -4,6 +4,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 import zipfile
 from dataclasses import replace
@@ -96,6 +97,23 @@ class ToolManager:
         configured_path: str | Path | None,
     ) -> Path | None:
         """按手动配置、项目目录、常见目录和 PATH 的顺序发现工具。"""
+        if sys.platform.startswith("linux"):
+            if tool_name is ToolName.WINRAR:
+                return None
+            if configured_path is not None:
+                return Path(configured_path).expanduser().resolve()
+            names = ("7z", "7zz", "7za") if tool_name is ToolName.SEVEN_ZIP else ("lz4",)
+            for executable in names:
+                candidates = self._project_candidates(executable)
+                match = shutil.which(executable)
+                if match:
+                    candidates.append(Path(match))
+                for candidate in candidates:
+                    self._tools[tool_name].path = candidate.expanduser().resolve()
+                    if self.check_tool(tool_name):
+                        return self._tools[tool_name].path
+            self._tools[tool_name].path = None
+            return None
         if configured_path is not None:
             manual_path = Path(configured_path).expanduser().resolve()
             # 手动配置始终优先；即使无效也保留路径供状态和错误诊断使用。
@@ -169,6 +187,20 @@ class ToolManager:
         info.verified = False
         if not info.available or info.path is None:
             return False
+        if sys.platform.startswith("linux"):
+            # WSL can execute PE files through interop. Reject those even when
+            # renamed or reached through a symlink; WinRAR is Windows-only here.
+            try:
+                if name is ToolName.WINRAR or info.path.suffix.lower() in {".exe", ".com", ".bat", ".cmd"} or not os.access(info.path, os.X_OK):
+                    info.available = False
+                    return False
+                with info.path.open("rb") as executable:
+                    if executable.read(2) == b"MZ":
+                        info.available = False
+                        return False
+            except OSError:
+                info.available = False
+                return False
 
         try:
             file_status = info.path.stat()
@@ -195,7 +227,7 @@ class ToolManager:
                 errors="replace",
                 check=False,
                 timeout=self.VERSION_TIMEOUT_SECONDS,
-                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+                creationflags=0 if sys.platform.startswith("linux") else getattr(subprocess, "CREATE_NO_WINDOW", 0),
             )
         except (OSError, subprocess.TimeoutExpired):
             self._verification_cache[cache_key] = (False, "")
@@ -211,6 +243,12 @@ class ToolManager:
             if part
         )
         info.version = self._extract_version(version_output)
+        if sys.platform.startswith("linux"):
+            signature = r"7-Zip|7z[az]?\s" if name is ToolName.SEVEN_ZIP else r"\bLZ4\b"
+            if not re.search(signature, version_output, re.IGNORECASE) or not info.version:
+                self._verification_cache[cache_key] = (False, "")
+                info.version = ""
+                return False
         info.verified = True
         self._verification_cache[cache_key] = (True, info.version)
         return True
@@ -222,6 +260,8 @@ class ToolManager:
 
     def install_seven_zip(self) -> bool:
         """Install 64-bit 7-Zip only after the CLI has received consent."""
+        if sys.platform.startswith("linux"):
+            return False
         if shutil.which("winget"):
             completed = subprocess.run(
                 self.WINGET_INSTALL_COMMAND,
@@ -234,6 +274,8 @@ class ToolManager:
 
     def install_lz4(self) -> bool:
         """Place only lz4.exe from an official LZ4 Windows release archive."""
+        if sys.platform.startswith("linux"):
+            return False
         opener = build_opener(_OfficialLZ4RedirectHandler())
         page = self._open_official_lz4_url(opener, self.LZ4_RELEASES_URL)
         with page:
@@ -288,6 +330,8 @@ class ToolManager:
 
     def _download_and_run_7zip_installer(self) -> None:
         """Download the current x64 installer from 7-zip.org and wait for it."""
+        if sys.platform.startswith("linux"):
+            return
         opener = build_opener(_Official7ZipRedirectHandler())
         page = self._open_official_7zip_url(opener, self.SEVEN_ZIP_WEBSITE)
         with page:

@@ -4,20 +4,23 @@
 
 ## English
 
-A small Windows tool for sorting out game-resource archives.
+A Windows and Linux desktop/CLI tool for sorting out game-resource archives.
 
 Downloaded resource packs are often messy: the extension may be wrong, several archive layers may be wrapped together, a split volume may be missing, or a RAR may be hiding inside a JPEG. GameArchiveManager checks file signatures, extracts archives layer by layer, and copies content that looks like a game root into a fresh output directory.
 
-It is not a save-game manager. It has a desktop window and a command-line window. If 7-Zip or the LZ4 command-line tool is missing, the program asks before downloading it from the official site; it never connects in the background. The current update is `0.2.0` source code on [GitHub Releases](https://github.com/HypnosysNyx/GameArchiveManager/releases/tag/v0.2.0). This update does not include a new installer or a new executable. The older `0.1.0` portable zip is the previous packaged build and does not contain this update.
+It is not a save-game manager. It has a desktop window and a command-line window. If 7-Zip or the LZ4 command-line tool is missing, the program asks before downloading it from the official site; it never connects in the background. The newest cross-platform preview is [v0.3.0-rc.1](https://github.com/HypnosysNyx/GameArchiveManager/releases/tag/v0.3.0-rc.1), offering a Windows x64 GUI/CLI portable zip and a Linux Python wheel. This is a release candidate: large encrypted nested sample and clean Windows 11 VM acceptance remain pending. Earlier v0.2.0 was source-only.
 
 ## Before you start
+
+Linux support uses the same source code. For native Ubuntu dependencies, pipx installation,
+and local/Git-source upgrades, see [Linux setup](docs/LINUX.md). The same core code is shipped for both platforms. The Windows instructions follow below.
 
 - Windows 10 or 11
 - 64-bit [7-Zip](https://www.7-zip.org/), installed in its default location
 - `lz4.exe` if you need to process `.lz4` files
 - WinRAR as an optional fallback extractor for RAR archives
 
-This `0.2.0` publication is source code. It does not add a portable zip or an executable. To run it, install Python 3.10 or newer, then use the commands in “Running from source”. The older packaged program remains `GameArchiveManager-0.1.0` and does not include the changes below.
+For the current v0.3.0-rc.1 Windows preview, download and extract the complete Windows x64 ZIP from Releases, then launch `GameArchiveManager.exe` (GUI) or `GameArchiveManager-CLI.exe`. Required external unpackers are not bundled; install 7-Zip separately. Source users can still run Python 3.10+.
 
 ## Usage
 
@@ -98,11 +101,14 @@ For more detail, see [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md), [`docs/CONFIGUR
 
 [English](#english)
 
+Linux 与 Windows 共用源码。原生 Ubuntu 依赖、pipx 安装及本地/Git 来源更新见
+[Linux 安装说明](docs/LINUX.md)。v0.3.0-rc.1 预发布同时提供 Windows ZIP 和 Linux wheel。
+
 整理游戏资源压缩包的小工具，可以开窗口，也可以用命令行。
 
 网上下载的资源包经常不太规矩：扩展名是假的，外面套着好几层，分卷缺了一块，或者 JPEG 里面藏着 RAR。这个程序会先看文件头，再按层解包，最后把看起来像游戏根目录的内容复制到一个新的输出目录里。
 
-它不是存档管理器。可以开桌面窗口，也可以用命令行。缺少 7-Zip 或 LZ4 命令行工具时会先问你，同意后才从官方地址下载，不会在后台偷偷联网。这次更新是 `0.2.0` 源码，在 [GitHub Releases](https://github.com/HypnosysNyx/GameArchiveManager/releases/tag/v0.2.0)。这次不附带新的安装包，也不附带新的 exe。以前的 `0.1.0` 便携压缩包是上一版打包结果，里面没有这次的改动。
+它不是存档管理器。可以开桌面窗口，也可以用命令行。缺少 7-Zip 或 LZ4 命令行工具时会先问你，同意后才从官方地址下载，不会在后台偷偷联网。最新跨平台预发布是 [v0.3.0-rc.1](https://github.com/HypnosysNyx/GameArchiveManager/releases/tag/v0.3.0-rc.1)，提供 Windows x64 图形界面/命令行便携包和 Linux Python wheel。大体积嵌套加密真实样本与干净 Windows 11 虚拟机验收仍未完成，因此标为 RC。之前的 v0.2.0 仅发布源码。
 
 ## 先准备好
 
@@ -111,7 +117,7 @@ For more detail, see [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md), [`docs/CONFIGUR
 - 如果要处理 `.lz4`，再准备 `lz4.exe`
 - 如果需要 RAR 的备用解包器，可以安装 WinRAR
 
-这次 `0.2.0` 发布的是源码，没有新的便携压缩包，也没有新的 exe。要运行这次更新，请安装 Python 3.10 或更新版本，再用下面「从源码运行」里的命令。旧的 `GameArchiveManager-0.1.0` 打包程序不包含下面这些改动。
+当前 v0.3.0-rc.1 Windows 预发布请下载并解压完整 x64 ZIP，双击 `GameArchiveManager.exe` 打开 GUI，或使用 `GameArchiveManager-CLI.exe`。请另行安装 7-Zip；安装包不捆绑第三方解压工具。源码运行仍需要 Python 3.10+。
 
 ## 怎么用
 

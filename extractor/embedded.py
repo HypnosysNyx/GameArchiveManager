@@ -6,6 +6,7 @@ from analyzer.archive_analyzer import ArchiveAnalyzer
 from cleanup.runtime_tracker import register_created_directory
 from execution.models import ExtractionPlan
 from extractor.extractor_models import ExtractionResult, ExtractionStatus
+from extractor.embedded_work import EmbeddedWork
 
 
 class EmbeddedExtractor:
@@ -21,7 +22,7 @@ class EmbeddedExtractor:
     def __init__(self, analyzer: ArchiveAnalyzer | None = None) -> None:
         self.analyzer = analyzer or ArchiveAnalyzer()
 
-    def extract(self, plan: ExtractionPlan) -> ExtractionResult:
+    def extract(self, plan: ExtractionPlan, work: EmbeddedWork | None = None) -> ExtractionResult:
         source = plan.archive_path.expanduser().resolve()
         output = plan.output_path.expanduser().resolve() if plan.output_path else None
         embedded_format = plan.embedded_container_format.upper()
@@ -42,11 +43,15 @@ class EmbeddedExtractor:
             f"{source.stem}_embedded{self.EXTENSIONS[embedded_format]}"
         )
         try:
+            if work is not None:
+                work.reserve_carve(source.stat().st_size - offset, output.parent)
             output.mkdir(parents=True, exist_ok=False)
             register_created_directory(output)
             with source.open("rb") as input_file, extracted_path.open("xb") as target:
                 input_file.seek(offset)
                 while True:
+                    if work is not None:
+                        work.check(output)
                     chunk = input_file.read(self.COPY_CHUNK_SIZE)
                     if not chunk:
                         break

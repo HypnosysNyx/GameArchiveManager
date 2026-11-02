@@ -60,6 +60,9 @@ def offer_seven_zip_install(tool_manager: ToolManager) -> bool:
     info = tool_manager.get_tool_status(ToolName.SEVEN_ZIP)
     if info.verified:
         return False
+    if sys.platform.startswith("linux"):
+        _print_console_safe("请安装 Linux 原生 7z、7zz 或 7za 并加入 PATH / Install native 7-Zip using your system package manager.")
+        return False
     _print_console_safe("未找到或无法验证 7-Zip / 7-Zip was not found or could not be verified.")
     _print_console_safe("官网 / Official website: https://www.7-zip.org/")
     try:
@@ -92,6 +95,9 @@ def offer_lz4_install(tool_manager: ToolManager) -> bool:
     """Ask before downloading a missing or unverified LZ4 command line tool."""
     info = tool_manager.get_tool_status(ToolName.LZ4)
     if info.verified:
+        return False
+    if sys.platform.startswith("linux"):
+        _print_console_safe("请安装 Linux 原生 lz4 并加入 PATH / Install native lz4 using your system package manager.")
         return False
     _print_console_safe(
         "未找到或无法验证 LZ4 / LZ4 was not found or could not be verified."

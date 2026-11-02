@@ -12,6 +12,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 from analyzer.archive_analyzer import ArchiveAnalyzer
+from analyzer.models import ArchiveInfo
 from analyzer.embedded_detector import (
     EmbeddedArchiveDetector,
     EmbeddedDiagnosticReason,
@@ -696,8 +697,8 @@ class GameArchiveIntegrationTests(unittest.TestCase):
         from version import APP_NAME, APP_VERSION, BUILD_TYPE
 
         self.assertEqual(APP_NAME, "GameArchiveManager")
-        self.assertEqual(APP_VERSION, "0.2.0")
-        self.assertEqual(BUILD_TYPE, "Release")
+        self.assertEqual(APP_VERSION, "0.3.0rc1")
+        self.assertEqual(BUILD_TYPE, "Release Candidate")
 
     def test_main_confirmation_executes_application_service(self) -> None:
         import main as main_module
@@ -756,7 +757,7 @@ class GameArchiveIntegrationTests(unittest.TestCase):
         )
         output = stdout.getvalue()
         self.assertIn("GameArchiveManager", output)
-        self.assertIn("版本: 0.2.0", output)
+        self.assertIn("版本: 0.3.0rc1", output)
         self.assertIn("7-Zip:", output)
         self.assertIn("WinRAR:", output)
         self.assertIn("LZ4:", output)
@@ -1384,8 +1385,8 @@ class GameArchiveIntegrationTests(unittest.TestCase):
 
             output = stdout.getvalue()
             self.assertIn("GameArchiveManager", output)
-            self.assertIn("版本: 0.2.0", output)
-            self.assertIn("构建类型: Release", output)
+            self.assertIn("版本: 0.3.0rc1", output)
+            self.assertIn("构建类型: Release Candidate", output)
             for display_name, tool_path in (
                 ("7-Zip", tool_paths[ToolName.SEVEN_ZIP]),
                 ("WinRAR", tool_paths[ToolName.WINRAR]),
@@ -1728,6 +1729,69 @@ class GameArchiveIntegrationTests(unittest.TestCase):
             self.assertIn("超过限制", result.reasons[0])
             self.assertFalse(plan.can_execute)
             self.assertIn("安全检查未通过", plan.message)
+
+    def test_split_archive_limit_reports_total_volume_size(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            first = root / "测试游戏PC.7z.001"
+            second = root / "测试游戏PC.7z.002"
+            first.write_bytes(b"a" * (700 * 1024))
+            second.write_bytes(b"b" * (700 * 1024))
+            archive_info = ArchiveInfo(
+                file_path=first,
+                extension=".001",
+                real_format="7Z",
+                is_fake_extension=False,
+                confidence=1.0,
+                is_multi_volume=True,
+                volume_files=[first, second],
+            )
+            settings = Settings(max_archive_size_mb=1)
+
+            result = ArchiveSafetyChecker(settings).check(archive_info)
+            plan = ExecutionStrategy(settings=settings).create_plan(archive_info)
+
+            self.assertFalse(result.safe)
+            self.assertIn("分卷归档总大小超过限制", result.reasons[0])
+            self.assertIn("2 卷合计", result.reasons[0])
+            self.assertIn("最大归档大小（MB）", result.reasons[0])
+            self.assertFalse(plan.can_execute)
+            self.assertIn("分卷归档总大小超过限制", plan.message)
+
+    def test_saved_settings_limit_reaches_split_archive_safety_check(self) -> None:
+        from gui.settings_panel import load_form_values, save_form_values
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            config_path = root / "active.json"
+            volumes = [root / f"sample7.7z.{index:03d}" for index in range(1, 4)]
+            archive = ArchiveInfo(
+                file_path=volumes[0], extension=".001", real_format="7Z",
+                is_fake_extension=False, confidence=1.0, is_multi_volume=True,
+                volume_files=volumes,
+            )
+            # Sample 7's exact aggregate; no large files or extraction involved.
+            sizes = dict(zip(volumes, (4294967296, 4294967296, 2870905380)))
+            self.assertEqual(11460839972, sum(sizes.values()))
+            values = load_form_values(config_path)
+            self.assertEqual(10240, values["max_archive_size_mb"])
+            for limit, expected_safe in ((10240, False), (20480, True)):
+                with self.subTest(limit=limit):
+                    values["max_archive_size_mb"] = str(limit)
+                    self.assertIsNone(save_form_values(config_path, values))
+                    settings = ConfigLoader(config_path).load()
+                    self.assertEqual(limit, settings.max_archive_size_mb)
+                    self.assertEqual(limit, load_form_values(config_path)["max_archive_size_mb"])
+                    with patch.object(Path, "stat", autospec=True,
+                                      side_effect=lambda path: Mock(st_size=sizes[path])):
+                        result = ArchiveSafetyChecker(settings).check(archive)
+                    self.assertEqual(expected_safe, result.safe)
+                    if expected_safe:
+                        self.assertEqual([], result.reasons)
+                    else:
+                        self.assertIn("11460839972", result.reasons[0])
+                        self.assertIn("10737418240", result.reasons[0])
+                        self.assertIn("3 卷合计", result.reasons[0])
 
     def test_extraction_safety_allows_small_directory(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -2511,8 +2575,8 @@ class GameArchiveIntegrationTests(unittest.TestCase):
             self.assertIn("失败 1 个", report.summary)
 
     def test_report_failure_detail_for_missing_tool(self) -> None:
-        archive = Path(r"C:\Games\missing-tool.rar")
-        failed_output = Path(r"C:\Games\missing-tool_extracted")
+        archive = Path(r"C:\TestArchives\测试游戏\missing-tool.rar")
+        failed_output = Path(r"C:\TestArchives\测试游戏\missing-tool_extracted")
         coordinator_result = CoordinatorResult(
             success=False,
             archive_path=archive,
@@ -2545,7 +2609,7 @@ class GameArchiveIntegrationTests(unittest.TestCase):
         self.assertEqual(detail.reason, "7-Zip is not available")
 
     def test_report_failure_detail_for_wrong_password(self) -> None:
-        archive = Path(r"C:\Games\protected.7z")
+        archive = Path(r"C:\TestArchives\测试游戏\protected.7z")
         coordinator_result = CoordinatorResult(
             success=False,
             archive_path=archive,
@@ -2576,7 +2640,7 @@ class GameArchiveIntegrationTests(unittest.TestCase):
     def test_report_failure_detail_for_corrupt_archive_and_cli_output(self) -> None:
         import main as main_module
 
-        archive = Path(r"C:\Games\damaged.zip")
+        archive = Path(r"C:\TestArchives\测试游戏\damaged.zip")
         coordinator_result = CoordinatorResult(
             success=False,
             archive_path=archive,

@@ -6,10 +6,13 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 
 from config.config_loader import ConfigLoader
+from config.settings import Settings
 from password.session_store import SessionPasswordStore
 
 
-BOOLEAN_FIELDS = ("ignore_android", "ignore_AZ", "ignore_pc")
+PLATFORM_FIELDS = ("ignore_android", "ignore_AZ", "ignore_pc")
+PASSWORD_FIELDS = ("save_passwords", "auto_try_password")
+BOOLEAN_FIELDS = PLATFORM_FIELDS + PASSWORD_FIELDS
 PATH_FIELDS = ("seven_zip_path", "winrar_path", "lz4_path")
 NUMBER_FIELDS = (
     "max_recursive_depth",
@@ -25,6 +28,8 @@ LABELS = {
     "ignore_android": "忽略 Android 内容",
     "ignore_AZ": "忽略 AZ 标签内容",
     "ignore_pc": "忽略 PC 标签内容",
+    "save_passwords": "成功验证的密码自动保存到本机",
+    "auto_try_password": "解压时自动尝试本机密码库",
     "seven_zip_path": "7-Zip 路径",
     "winrar_path": "WinRAR 路径",
     "lz4_path": "lz4 路径",
@@ -38,6 +43,8 @@ LABELS = {
 }
 LABELS_EN = {
     "ignore_android": "Ignore Android content", "ignore_AZ": "Ignore AZ-tagged content", "ignore_pc": "Ignore PC-tagged content",
+    "save_passwords": "Save verified passwords to local library",
+    "auto_try_password": "Try saved passwords automatically",
     "seven_zip_path": "7-Zip path", "winrar_path": "WinRAR path", "lz4_path": "lz4 path",
     "max_recursive_depth": "Maximum recursion depth", "max_archive_tasks": "Maximum archive tasks",
     "max_initial_archive_tasks": "Maximum initial archive tasks", "max_embedded_candidates": "Maximum embedded candidates",
@@ -48,17 +55,31 @@ LABELS_EN = {
 TEXT = {
     "zh_CN": {
         "appearance": "外观", "mode": "模式", "language": "语言", "scan_scope": "扫描范围",
-        "tools": "解压工具", "password_library": "密码库（一行一个）", "limits": "处理限制",
+        "tools": "解压工具", "password_library": "密码库", "limits": "处理限制",
+        "password_manage": "打开密码管理器…",
+        "password_hint": "密码在独立窗口中管理，默认隐藏；下面的开关会在保存设置后生效。",
         "browse": "浏览", "save_unsaved": "设置未保存", "password_save_failed": "密码库无法保存。",
-        "saved_title": "设置", "saved": "设置和密码库已保存。", "invalid_appearance": "外观选项不合法，未保存。",
+        "saved_title": "设置", "saved": "设置已保存；密码库修改会单独立即保存。", "invalid_appearance": "外观选项不合法，未保存。",
         "auto": "自动", "light": "浅色", "dark": "深色", "zh_CN": "中文", "en": "English",
+        "config_path": "当前配置路径（只读）",
+        "config_limit": "有效 max_archive_size_mb：{limit} MB",
+        "config_loaded": "",
+        "config_missing": "警告：配置文件缺失，正在使用默认设置。",
+        "config_invalid": "警告：配置无效或含不支持的值，部分或全部设置使用默认值。",
     },
     "en": {
         "appearance": "Appearance", "mode": "Mode", "language": "Language", "scan_scope": "Scan scope",
-        "tools": "Extraction tools", "password_library": "Password library (one per line)", "limits": "Processing limits",
+        "tools": "Extraction tools", "password_library": "Password library", "limits": "Processing limits",
+        "password_manage": "Open password manager…",
+        "password_hint": "Manage hidden passwords in a separate window. Save settings to apply these switches.",
         "browse": "Browse", "save_unsaved": "Settings not saved", "password_save_failed": "Password library could not be saved.",
-        "saved_title": "Settings", "saved": "Settings and password library saved.", "invalid_appearance": "Invalid appearance option; settings were not saved.",
+        "saved_title": "Settings", "saved": "Settings saved. Password changes are saved separately.", "invalid_appearance": "Invalid appearance option; settings were not saved.",
         "auto": "Auto", "light": "Light", "dark": "Dark", "zh_CN": "Chinese", "en": "English",
+        "config_path": "Active configuration path (read only)",
+        "config_limit": "Effective max_archive_size_mb: {limit} MB",
+        "config_loaded": "",
+        "config_missing": "Warning: configuration file missing; default settings are in use.",
+        "config_invalid": "Warning: invalid or unsupported configuration; some or all settings use defaults.",
     },
 }
 
@@ -73,7 +94,23 @@ def field_label(language: str, field: str) -> str:
 
 def load_form_values(path: str | Path) -> dict[str, object]:
     """Load editable values without creating a Tk window."""
-    settings = ConfigLoader(path).load()
+    return load_form_state(path)[1]
+
+
+def load_form_state(path: str | Path) -> tuple[Path, dict[str, object], str]:
+    """Read the displayed source, values and fallback status in one load."""
+    resolved = Path(path).expanduser().resolve()
+    loader = ConfigLoader(resolved)
+    status = "loaded" if resolved.exists() else "missing"
+    try:
+        settings = loader.load()
+    except (UnicodeError, TypeError):
+        # Invalid text or malformed GUI preferences can fail before the
+        # loader records a warning. Keep the dialog usable with defaults.
+        settings = Settings()
+        status = "invalid"
+    if loader.warnings:
+        status = "invalid"
     values = {field: getattr(settings, field) for field in BOOLEAN_FIELDS + NUMBER_FIELDS}
     values.update(
         {
@@ -83,7 +120,7 @@ def load_form_values(path: str | Path) -> dict[str, object]:
     )
     values["theme_mode"] = getattr(settings, "theme_mode", "auto")
     values["ui_language"] = getattr(settings, "ui_language", "zh_CN")
-    return values
+    return resolved, values, status
 
 
 def _normalise_values(values: dict[str, object]) -> tuple[dict[str, object] | None, str | None]:
@@ -150,21 +187,24 @@ def build(
     on_theme=None,
     language: str = "zh_CN",
     on_language=None,
+    on_password_library=None,
 ) -> tk.Frame:
     """Build a compact settings form. Extra window height must not stretch these rows."""
-    return _SettingsForm(parent, config_path, colors, on_theme, language, on_language)
+    return _SettingsForm(parent, config_path, colors, on_theme, language, on_language, on_password_library)
 
 
 class _SettingsForm(tk.Frame):
     """A left-hand settings navigator with one compact group shown at a time."""
 
-    def __init__(self, parent: tk.Misc, config_path: str | Path, colors: dict[str, str], on_theme, language: str, on_language) -> None:
+    def __init__(self, parent: tk.Misc, config_path: str | Path, colors: dict[str, str], on_theme, language: str, on_language, on_password_library=None) -> None:
         super().__init__(parent, bg=colors["bg"])
-        self.config_path = config_path
+        self.config_path, values, self._config_status = load_form_state(config_path)
+        self._effective_archive_limit = values["max_archive_size_mb"]
         self.colors = colors
         self._on_theme = on_theme
         self.language = language if language in TEXT else "zh_CN"
         self._on_language = on_language
+        self._on_password_library = on_password_library
         self.font = tkfont_from(parent)
         self.columnconfigure(0, weight=0)
         self.columnconfigure(1, weight=1)
@@ -179,7 +219,6 @@ class _SettingsForm(tk.Frame):
         self.path_entries: list[tk.Entry] = []
         self.number_cells: list[tk.Frame] = []
         self.variables: dict[str, tk.Variable] = {}
-        values = load_form_values(config_path)
 
         self.band = self.font.metrics("linespace") + 12
         self.nav = tk.Frame(self, bg=colors["bg"])
@@ -225,7 +264,7 @@ class _SettingsForm(tk.Frame):
         self.checks = tk.Frame(self.content, bg=colors["bg"])
         self.checks.grid(row=4, column=0, sticky="ew", padx=16, pady=(0, 8))
         self._frames.append(self.checks)
-        for field in BOOLEAN_FIELDS:
+        for field in PLATFORM_FIELDS:
             variable = tk.BooleanVar(value=bool(values[field]))
             self.variables[field] = variable
             check = tk.Checkbutton(
@@ -272,17 +311,35 @@ class _SettingsForm(tk.Frame):
             button.place(relx=0, rely=0, relwidth=1, relheight=1)
             self.browse_buttons.append(button)
 
+        # Validate encrypted storage before Settings opens, but never render
+        # password contents as visible editable multiline text.
         self.password_store = SessionPasswordStore()
         self._section_title("password_library", 9, (0, 4))
         self.password_library = tk.Frame(self.content, bg=colors["bg"])
         self.password_library.grid(row=9, column=0, sticky="ew", padx=16, pady=(0, 8))
         self._frames.append(self.password_library)
         self.password_library.columnconfigure(0, weight=1)
-        self.password_label = self._label(self.password_library, text(self.language, "password_library"))
-        self.password_label.grid(row=0, column=0, sticky="w", pady=(0, 4))
-        self.password_text = tk.Text(self.password_library, height=5, font=self.font, relief="flat")
-        self.password_text.grid(row=1, column=0, sticky="ew")
-        self.password_text.insert("1.0", "\n".join(self.password_store.passwords()))
+        self.password_label = self._label(self.password_library, text(self.language, "password_hint"))
+        self.password_label.grid(row=0, column=0, sticky="ew", pady=(0, 8))
+        self._password_checks: list[tk.Checkbutton] = []
+        for row, field in enumerate(PASSWORD_FIELDS, start=1):
+            variable = tk.BooleanVar(value=bool(values[field]))
+            self.variables[field] = variable
+            check = tk.Checkbutton(
+                self.password_library, variable=variable,
+                text=field_label(self.language, field), font=self.font,
+                anchor="w", justify="left", bd=0, padx=4, pady=2,
+                highlightthickness=2,
+            )
+            check.grid(row=row, column=0, sticky="ew", pady=(0, 6))
+            self._password_checks.append(check)
+            self._field_widgets[field] = check
+        self.manage_password_button = self._button(
+            self.password_library,
+            text(self.language, "password_manage"),
+            self._open_password_library,
+        )
+        self.manage_password_button.grid(row=3, column=0, sticky="ew", pady=(4, 0))
 
         self._section_title("limits", 10, (0, 4))
         self.numbers = tk.Frame(self.content, bg=colors["bg"])
@@ -315,6 +372,20 @@ class _SettingsForm(tk.Frame):
             button = self._button(self.nav, self._nav_text(key), lambda chosen=key: self._select_group(chosen))
             button.grid(sticky="ew", pady=(0, 4))
             self._nav_buttons[key] = button
+        self.config_source = tk.Frame(self.content, bg=colors["bg"])
+        self.config_source.grid(row=0, column=0, sticky="ew", pady=(0, 8))
+        self.config_source.columnconfigure(0, weight=1)
+        self._frames.append(self.config_source)
+        self.config_path_label = self._label(self.config_source, text(self.language, "config_path"))
+        self.config_path_label.grid(row=0, column=0, sticky="w")
+        self._config_path_value = tk.StringVar(value=str(self.config_path))
+        self.config_path_entry = self._entry(self.config_source, self._config_path_value)
+        self.config_path_entry.configure(state="readonly", width=1)
+        self.config_path_entry.grid(row=1, column=0, sticky="ew")
+        self.config_status_label = self._label(self.config_source, "")
+        self.config_status_label.configure(justify="left")
+        self.config_status_label.grid(row=2, column=0, sticky="ew")
+        self._update_config_status_text()
         self.apply_colors(colors)
         self.reflow(720)
         self._select_group("appearance")
@@ -328,12 +399,28 @@ class _SettingsForm(tk.Frame):
         if warning:
             messagebox.showwarning(text(self.language, "save_unsaved"), warning, parent=parent)
         else:
-            try:
-                self.password_store.replace(self.password_text.get("1.0", "end-1c").splitlines())
-            except OSError:
-                messagebox.showwarning(text(self.language, "save_unsaved"), text(self.language, "password_save_failed"), parent=parent)
-                return
+            _, values, self._config_status = load_form_state(self.config_path)
+            self._effective_archive_limit = values["max_archive_size_mb"]
+            self._update_config_status_text()
+            # The password manager saves independently and immediately.
+            # Saving unrelated settings must never overwrite a changed library.
             messagebox.showinfo(text(self.language, "saved_title"), text(self.language, "saved"), parent=parent)
+
+    def _update_config_status_text(self) -> None:
+        self.config_path_label.configure(text=text(self.language, "config_path"))
+        summary = text(self.language, "config_limit").format(limit=self._effective_archive_limit)
+        warning = text(self.language, "config_" + self._config_status)
+        self.config_status_label.configure(text=summary + ("\n" + warning if warning else ""))
+
+    def _open_password_library(self) -> None:
+        if self._on_password_library is not None:
+            self._on_password_library()
+            return
+        from gui.password_library import PasswordLibraryDialog
+
+        PasswordLibraryDialog(
+            self.winfo_toplevel(), language=self.language, colors=self.colors
+        )
 
     def reflow(self, width: int) -> None:
         """Keep the visible group compact while its fields absorb extra width."""
@@ -351,9 +438,15 @@ class _SettingsForm(tk.Frame):
         compact_nav = width < nav_width + 360
         self._place_navigation(width, compact_nav)
         inner = max(1, width - (32 if compact_nav else nav_width + 36))
+        self.config_status_label.configure(wraplength=max(200, inner))
         self._place_theme()
         self._place_language()
         self._place_checks(inner)
+        self.password_label.configure(
+            wraplength=max(240, inner - 32), justify="left"
+        )
+        for check in self._password_checks:
+            check.configure(wraplength=max(240, inner - 36), justify="left")
         for row, label, entry_slot, browse_slot in zip(
             self.path_rows, self.path_labels, self.path_entry_slots, self.path_browse_slots
         ):
@@ -477,7 +570,7 @@ class _SettingsForm(tk.Frame):
             frame.configure(bg=colors["bg"])
         for label in self._labels:
             label.configure(bg=colors["bg"], fg=colors["fg"])
-        for check in self._checks:
+        for check in (*self._checks, *self._password_checks):
             check.configure(
                 bg=colors["bg"],
                 fg=colors["fg"],
@@ -491,6 +584,7 @@ class _SettingsForm(tk.Frame):
         for entry in self._entries:
             entry.configure(
                 bg=colors["entry_bg"],
+                readonlybackground=colors["entry_bg"],
                 fg=colors["fg"],
                 insertbackground=colors["fg"],
                 highlightthickness=1,
@@ -498,14 +592,7 @@ class _SettingsForm(tk.Frame):
                 highlightcolor=colors["accent"],
                 relief="flat",
             )
-        self.password_text.configure(
-            bg=colors["entry_bg"],
-            fg=colors["fg"],
-            insertbackground=colors["fg"],
-            highlightthickness=1,
-            highlightbackground=colors["border"],
-            highlightcolor=colors["accent"],
-        )
+        # Passwords are never painted as plaintext in the Settings form.
         selected = self.variables["theme_mode"].get()
         for key, button in self.theme_buttons.items():
             chosen = key == selected
@@ -518,7 +605,7 @@ class _SettingsForm(tk.Frame):
                 highlightbackground=colors["border"],
                 highlightcolor=colors["accent"],
             )
-        for button in (*self.language_buttons.values(), *self.browse_buttons):
+        for button in (*self.language_buttons.values(), *self.browse_buttons, self.manage_password_button):
             button.configure(
                 bg=colors["surface"],
                 fg=colors["fg"],
@@ -565,6 +652,7 @@ class _SettingsForm(tk.Frame):
 
     def set_language(self, language: str) -> None:
         self.language = language if language in TEXT else "zh_CN"
+        self._update_config_status_text()
         self.theme_label.configure(text=text(self.language, "mode"))
         self.language_label.configure(text=text(self.language, "language"))
         for key, title in self._section_titles.items():
@@ -579,7 +667,8 @@ class _SettingsForm(tk.Frame):
             button.configure(text=text(self.language, key))
         for button in self.browse_buttons:
             button.configure(text=text(self.language, "browse"))
-        self.password_label.configure(text=text(self.language, "password_library"))
+        self.password_label.configure(text=text(self.language, "password_hint"))
+        self.manage_password_button.configure(text=text(self.language, "password_manage"))
         self.reflow(self.winfo_width())
 
     def _select_group(self, group: str) -> None:
@@ -588,7 +677,7 @@ class _SettingsForm(tk.Frame):
         for widgets in self._groups.values():
             for widget in widgets:
                 widget.grid_remove()
-        for row, widget in enumerate(self._groups[group]):
+        for row, widget in enumerate(self._groups[group], start=1):
             widget.grid(row=row, column=0, sticky="ew" if widget is not self._section_titles.get(group) else "w", padx=0, pady=(0, 8))
         self.apply_colors(self.colors)
         self.event_generate("<<SettingsGroupChanged>>")

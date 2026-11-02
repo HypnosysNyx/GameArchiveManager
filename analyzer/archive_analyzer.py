@@ -46,7 +46,7 @@ class ArchiveAnalyzer:
         self.volume_detector = SplitArchiveDetector()
         self.embedded_detector = EmbeddedArchiveDetector()
 
-    def analyze(self, file_path: str | Path) -> ArchiveInfo:
+    def analyze(self, file_path: str | Path, *, scan_embedded: bool = True) -> ArchiveInfo:
         """分析一个文件并返回真实格式信息。"""
         requested_path = Path(file_path).expanduser().resolve()
         volume_set = self.volume_detector.detect(requested_path)
@@ -68,7 +68,7 @@ class ArchiveAnalyzer:
         if real_format == "UNKNOWN" and volume_set is not None:
             real_format = volume_set.archive_format
         embedded_match = None
-        if real_format == "UNKNOWN" and path.is_file():
+        if scan_embedded and real_format == "UNKNOWN" and path.is_file():
             if self._allows_embedded_scan(path):
                 embedded_match = self.embedded_detector.detect(path)
             else:

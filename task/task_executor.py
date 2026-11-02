@@ -174,7 +174,13 @@ class TaskExecutor:
             analysis.password_candidates.copy()
         )
         if self.session_password_store is not None:
-            password_candidates.extend(self.session_password_store.candidates())
+            # Session-verified passwords are always reusable in this session;
+            # locally persisted passwords require explicit user opt-in.
+            password_candidates.extend(
+                self.session_password_store.candidates(
+                    include_saved=self.settings.auto_try_password
+                )
+            )
         for archive_info in analysis.archive_results:
             skip_reason = self._get_skip_reason(
                 archive_info.file_path, analysis.ignored_items

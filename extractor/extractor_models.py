@@ -43,3 +43,7 @@ class ExtractionResult:
         default_factory=list
     )
     tools_attempted: list[ToolName] = field(default_factory=list)
+    embedded_host: Path | None = None
+    embedded_offset: int | None = None
+    embedded_format: str = ""
+    embedded_validation_state: str = ""

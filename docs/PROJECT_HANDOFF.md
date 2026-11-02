@@ -1,6 +1,6 @@
 # GameArchiveManager 项目交接文档
 
-> 最后核验：2026-08-19（Asia/Shanghai）
+> **历史背景文档，不是当前状态快照。** 本文主体最后核验于 2026-08-19，仍含 0.1.0、RC 阶段和旧进度百分比等历史陈述。接手当前代码时必须先读 [START_HERE.md](../START_HERE.md) 和 [CURRENT_STATUS.md](CURRENT_STATUS.md)；不得把本文旧版本/进度描述当作 2026-10-25 的真实状态。
 
 # New Developer / AI Start Here
 
