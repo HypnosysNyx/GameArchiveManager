@@ -81,8 +81,8 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update
-          sudo apt-get install -y 7zip lz4 python3-tk xvfb xauth
-          python -m venv "$RUNNER_TEMP/gam-wheel-build"
+          sudo apt-get install -y 7zip lz4 python3-tk python3-venv xvfb xauth
+          /usr/bin/python3 -m venv "$RUNNER_TEMP/gam-wheel-build"
           "$RUNNER_TEMP/gam-wheel-build/bin/python" -m pip install \
             build==1.2.2.post1 setuptools==77.0.3 wheel==0.45.1 \
             packaging==24.2 pyproject-hooks==1.2.0
@@ -138,7 +138,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m venv "$RUNNER_TEMP/gam-wheel-installed"
+          /usr/bin/python3 -m venv "$RUNNER_TEMP/gam-wheel-installed"
           "$RUNNER_TEMP/gam-wheel-installed/bin/python" -m pip install --no-deps "$WHEEL_DIR"/*.whl
           cp scripts/linux_smoke.py "$RUNNER_TEMP/gam-release-smoke.py"
           cd "$RUNNER_TEMP"
