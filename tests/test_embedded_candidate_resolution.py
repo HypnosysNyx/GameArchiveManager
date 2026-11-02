@@ -391,15 +391,17 @@ class EmbeddedCandidateResolutionTests(unittest.TestCase):
 
     def test_external_process_receives_password_only_on_stdin(self):
         from extractor.embedded_work import EmbeddedWork
-        script = "import sys; assert sys.stdin.readline().strip() == '" + SECRET + "'"
-        # The helper represents a password-consuming tool. Only its stdin
-        # receives the secret; inspect the constructed argv separately.
-        script_path = self.root / "reader.py"
-        script_path.write_text(script)
-        command = [sys.executable, "-B", str(script_path)]
+        # The helper receives secret data only through stdin. No plaintext
+        # password is embedded in a generated script, argv or log.
+        script = (
+            "import hashlib, sys; "
+            "print(hashlib.sha256(sys.stdin.buffer.readline()).hexdigest())"
+        )
+        command = [sys.executable, "-B", "-c", script]
         self.assertNotIn(SECRET, repr(command))
         code, output = EmbeddedWork().run(command, self.root, SECRET)
         self.assertEqual(code, 0)
+        self.assertEqual(output.strip(), hashlib.sha256((SECRET + "\n").encode("utf-8")).hexdigest())
         self.assertNotIn(SECRET, output)
 
     def test_carve_budget_is_shared_by_later_candidates(self):
