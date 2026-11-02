@@ -28,6 +28,13 @@ class EmbeddedCandidateResolutionTests(unittest.TestCase):
         self.root = Path(self.temp.name)
         self.host = self.root / "host.jpg"
 
+    def require_rar_fixture_builder(self):
+        """Explicitly skip environment-dependent RAR5 integration cases when unavailable."""
+        rar = Path(r"C:\Program Files\WinRAR\Rar.exe")
+        if not rar.is_file():
+            self.skipTest("Optional WinRAR Rar.exe not installed: real RAR5 fixture NOT VERIFIED")
+        return rar
+
     def host_with(self, count=2):
         header = create_rar5_encryption_header()
         self.host.write_bytes(b"\xff\xd8\xffhost" + (header + b"padding") * count)
@@ -44,8 +51,7 @@ class EmbeddedCandidateResolutionTests(unittest.TestCase):
         return ExtractionResult(True, "ok", plan.output_path, status=Status.SUCCESS)
 
     def test_crc_valid_decoy_then_real_rar5_uses_full_validation(self):
-        rar = Path(r"C:\Program Files\WinRAR\Rar.exe")
-        self.assertTrue(rar.is_file(), "installed RAR fixture builder required")
+        rar = self.require_rar_fixture_builder()
         payload = self.root / "payload.txt"
         payload.write_text("correct content")
         archive = self.root / "real.rar"
@@ -64,8 +70,7 @@ class EmbeddedCandidateResolutionTests(unittest.TestCase):
 
     def test_real_header_encrypted_rar5_after_decoy_manual_password(self):
         """A real encrypted payload must remain reachable after a CRC-valid decoy."""
-        rar = Path(r"C:\Program Files\WinRAR\Rar.exe")
-        self.assertTrue(rar.is_file(), "installed RAR fixture builder required")
+        rar = self.require_rar_fixture_builder()
         payload = self.root / "private_payload.txt"
         payload.write_text("verified encrypted payload", encoding="utf-8")
         archive = self.root / "encrypted.rar"
@@ -341,7 +346,7 @@ class EmbeddedCandidateResolutionTests(unittest.TestCase):
 
     def test_real_rar_listing_success_but_data_crc_failure_is_rejected(self):
         from extractor.embedded_work import EmbeddedWork
-        rar = Path(r"C:\Program Files\WinRAR\Rar.exe")
+        rar = self.require_rar_fixture_builder()
         payload = self.root / "payload.txt"
         payload.write_bytes(b"stored CRC regression payload" * 20)
         archive = self.root / "real.rar"
