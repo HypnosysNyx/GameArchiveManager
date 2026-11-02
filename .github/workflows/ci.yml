@@ -54,10 +54,10 @@ jobs:
     env:
       PYTHONDONTWRITEBYTECODE: "1"
       PYTHONUTF8: "1"
-      XDG_CONFIG_HOME: ${{ runner.temp }}/gam-config
-      XDG_DATA_HOME: ${{ runner.temp }}/gam-data
-      XDG_STATE_HOME: ${{ runner.temp }}/gam-state
-      XDG_CACHE_HOME: ${{ runner.temp }}/gam-cache
+      XDG_CONFIG_HOME: /tmp/gam-${{ github.run_id }}-${{ github.run_attempt }}/config
+      XDG_DATA_HOME: /tmp/gam-${{ github.run_id }}-${{ github.run_attempt }}/data
+      XDG_STATE_HOME: /tmp/gam-${{ github.run_id }}-${{ github.run_attempt }}/state
+      XDG_CACHE_HOME: /tmp/gam-${{ github.run_id }}-${{ github.run_attempt }}/cache
       DBUS_SESSION_BUS_ADDRESS: unix:path=/nonexistent-gam-test-bus
     steps:
       - name: Check out source
