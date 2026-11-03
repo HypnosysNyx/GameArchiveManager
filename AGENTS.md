@@ -22,6 +22,6 @@ These instructions apply to the entire repository.
 
 - Do not push, merge, rebase, reset, clean, tag, publish a release, upload artifacts, or modify repository settings without the user's clear authorization for that action.
 - Do not overwrite or delete source archives, weaken CRC/SHA-256/path-boundary checks, persist plaintext passwords, or treat skipped tests as clean-VM evidence.
-- Keep the application identified as the published `0.1.0 Release`; historical RC documents remain historical records and must not be presented as the current download.
+- As verified on 2026-11-03, the newest packaged Windows and Linux build is `v0.3.0-rc.1` **prerelease**; `v0.2.0` is the older source-only version that GitHub may label `Latest` because it excludes prereleases. The historical `0.1.0 Release` is not the newest download. Verify current state against GitHub Releases before writing version claims; no unmerged RC2 work may be described as published.
 - Before release-related changes, read `project_state.json`, `docs/CURRENT_STATUS.md`, `docs/KNOWN_ISSUES.md`, and `docs/RC_SMOKE_TEST.md`.
 - For code changes, run relevant focused tests and then the full suite: `py -B -m unittest discover -s tests -p "test_*.py" -v`.

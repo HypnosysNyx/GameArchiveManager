@@ -4,13 +4,17 @@ import re
 
 from cleanup.runtime_tracker import register_created_directory
 from extractor.embedded_work import EmbeddedIncomplete
-from extractor.extractor_models import ExtractionResult, ExtractionStatus
+from extractor.extractor_models import ExtractionResult, ExtractionStageDiagnostic, ExtractionStatus
 from extractor.seven_zip import SevenZipExtractor
 from security.archive_content_inspector import ArchiveContentInspector
 from tools.models import ToolName
 
 
 class EmbeddedValidator:
+    # Only these fixed codes may cross the tool-output diagnostic boundary.
+    VALIDATION_STAGES = frozenset({"LISTING", "DATA_EXTRACTION"})
+    FAILURE_CODES = frozenset({"TOOL_NONZERO", "ARCHIVE_START_REJECTED", "UNSAFE_CONTENT"})
+
     def __init__(self, coordinator, work):
         self.coordinator = coordinator
         self.work = work
@@ -33,13 +37,13 @@ class EmbeddedValidator:
         code, text = self.work.run([str(tool.path), "l", "-slt", *options,
                                     str(plan.archive_path)], plan.archive_path.parent, password)
         if code:
-            return self._failure(text, password)
+            return self._failure(text, password, "LISTING")
         text = text.replace("\r\r\n", "\n").replace("\r\n", "\n")
         archive_header, separator, entries = text.partition("----------")
         if not separator or any(line.strip().startswith("Offset = ") and
                                 line.strip() != "Offset = 0"
                                 for line in archive_header.splitlines()):
-            return self._failure("archive start rejected", password)
+            return self._failure("archive start rejected", password, "LISTING", "ARCHIVE_START_REJECTED")
         physical = re.search(r"(?m)^Physical Size = (\d+)\s*$", archive_header)
         if physical is None or not 0 < int(physical[1]) <= plan.archive_path.stat().st_size:
             raise EmbeddedIncomplete("ARCHIVE_RANGE_UNCONFIRMED")
@@ -53,7 +57,7 @@ class EmbeddedValidator:
         info = self.coordinator.analyzer.analyze(plan.archive_path)
         safety = self.coordinator.strategy.safety_checker.check(info, content)
         if not safety.safe:
-            return self._failure("unsafe archive content", password)
+            return self._failure("unsafe archive content", password, "LISTING", "UNSAFE_CONTENT")
         self.work.check(plan.archive_path.parent, content.estimated_size)
         plan.output_path.mkdir(exist_ok=False)
         register_created_directory(plan.output_path)
@@ -67,16 +71,22 @@ class EmbeddedValidator:
             str(plan.archive_path), f"-o{plan.output_path}", "-aos", "-y"],
             plan.archive_path.parent, password, monitor)
         if code:
-            return self._failure(text, password)
+            return self._failure(text, password, "DATA_EXTRACTION")
         monitor()
         # x exit 0 verifies actual data/CRC. A successful listing never suffices.
         return ExtractionResult(True, "embedded data validation succeeded",
-            plan.output_path, tool_used=ToolName.SEVEN_ZIP, status=ExtractionStatus.SUCCESS)
+            plan.output_path, tool_used=ToolName.SEVEN_ZIP, status=ExtractionStatus.SUCCESS,
+            stage_diagnostics=[ExtractionStageDiagnostic("DATA_EXTRACTION",
+                tool=ToolName.SEVEN_ZIP, status=ExtractionStatus.SUCCESS,
+                normalized_reason="SUCCESS")])
 
     @staticmethod
-    def _failure(text, password):
+    def _failure(text, password, stage, code="TOOL_NONZERO"):
         status = SevenZipExtractor._classify_error(text)
         if password is None and status is ExtractionStatus.WRONG_PASSWORD:
             status = ExtractionStatus.PASSWORD_REQUIRED
         return ExtractionResult(False, "embedded validation rejected candidate",
-                                status=status)
+            tool_used=ToolName.SEVEN_ZIP, status=status,
+            stage_diagnostics=[ExtractionStageDiagnostic(stage,
+                tool=ToolName.SEVEN_ZIP, status=status,
+                error_type=code, normalized_reason=status.value)])
