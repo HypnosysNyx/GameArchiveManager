@@ -13,21 +13,21 @@
 | 测试时间 | 2026-08-28 12:30–13:04 +08:00 |
 | VM | `Win11-Sandbox`，可见 GUI 会话 |
 | Guest OS | Windows 11 Home 25H2，10.0.26200.9168，x64 |
-| Guest 用户 | `sandbox`，标准用户 |
-| RC2 EXE | `C:\Users\sandbox\AppData\Local\Temp\rc2\GameArchiveManager-0.1.0-RC2\GameArchiveManager.exe` |
+| Guest 用户 | `<username>`，标准用户 |
+| RC2 EXE | `C:\Users\<username>\AppData\Local\Temp\rc2\GameArchiveManager-0.1.0-RC2\GameArchiveManager.exe` |
 | EXE SHA256 | `67DF840B832EE9072375A3A267DF220DBB546FD61EF8B048EA8C8C6B17D20F71` |
-| 新测试根 | `C:\Users\sandbox\AppData\Local\Temp\rc2_item14_20260828_1233` |
+| 新测试根 | `C:\Users\<username>\AppData\Local\Temp\rc2_item14_test` |
 | 输入/中断通路 | `VBoxManage controlvm Win11-Sandbox keyboardputstring` + `keyboardputscancode 1d 2e ae 9d` |
 
-交接路径最初只有 hash 正确的 EXE，缺少 `_internal\python312.dll` 等 onedir 同伴文件。通过可见 guest CMD 的 `robocopy`，从上一轮已核验的 `rc2_codex_20260827\GameArchiveManager-0.1.0-RC2` 恢复同一 RC2 onedir；恢复后重新计算的 EXE SHA256 仍为上述 `67DF840B…`。没有替换成 RC1 或旧 RC2 EXE。
+交接路径最初只有 hash 正确的 EXE，缺少 `_internal\python312.dll` 等 onedir 同伴文件。通过可见 guest CMD 的 `robocopy`，从上一轮已核验的 `rc2_test\GameArchiveManager-0.1.0-RC2` 恢复同一 RC2 onedir；恢复后重新计算的 EXE SHA256 仍为上述 `67DF840B…`。没有替换成 RC1 或旧 RC2 EXE。
 
 ## 源文件完整性
 
 | 用例 | 源文件 | before SHA256 | after SHA256 | 结果 |
 |---|---|---|---|---|
-| EXTRACTING | `extracting\many.7z` | `4F8CA4EEC198DCBC188D0453353AB1FB3DBC12266CA4B35F137787DA30258B08` | 同 before | PASS |
-| SCANNING | `scanning\outer.7z` | `9E566A0F12F6652F5850E7BF30EE30B788AB6E938366933AA77A4AA52C50A54F` | 同 before | PASS |
-| VALIDATING | `validating\outer.7z` | `9E566A0F12F6652F5850E7BF30EE30B788AB6E938366933AA77A4AA52C50A54F` | 同 before | PASS |
+| EXTRACTING | `extracting\many.7z` | `[本地测试样本 SHA-256 已脱敏]` | 同 before | PASS |
+| SCANNING | `scanning\outer.7z` | `[本地测试样本 SHA-256 已脱敏]` | 同 before | PASS |
+| VALIDATING | `validating\outer.7z` | `[本地测试样本 SHA-256 已脱敏]` | 同 before | PASS |
 
 before 截图：`.vm_gate/rc2_67df_item14_extract_hash_before.png`、`.vm_gate/rc2_67df_item14_scan_hash_before.png`、`.vm_gate/rc2_67df_item14_validate_hash_before.png`。
 after 截图：`.vm_gate/rc2_67df_item14_extract_hash_after.png`、`.vm_gate/rc2_67df_item14_scan_hash_after.png`、`.vm_gate/rc2_67df_item14_validate_hash_after.png`。

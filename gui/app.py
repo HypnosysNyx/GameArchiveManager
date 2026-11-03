@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import sys
 import threading
 from pathlib import Path
@@ -23,7 +24,7 @@ def _sharp_text() -> None:
 _sharp_text()
 
 import tkinter as tk
-from tkinter import filedialog, font as tkfont, simpledialog
+from tkinter import filedialog, font as tkfont, messagebox, simpledialog
 
 # ``py gui\\app.py`` places gui/ on sys.path, not the project root.
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -33,26 +34,70 @@ if str(PROJECT_ROOT) not in sys.path:
 from application.app_service import GameArchiveService
 from application.runtime_paths import default_config_path
 from gui import settings_panel, theme, window_place
+from gui.password_library import PasswordLibraryDialog
+from password.session_store import PasswordStoreError
 from recovery.manual import ManualPasswordAction, ManualPasswordResponse
 
 
 THEME_LABELS = {"auto": "自动", "light": "浅色", "dark": "深色"}
 UI = {
     "zh_CN": {
-        "language": "中文 / English", "auto": "自动", "light": "浅色", "dark": "深色",
-        "browse": "浏览", "start": "开始", "settings": "设置", "choose": "请选择文件夹或压缩包，然后开始。",
-        "select_archive": "选择压缩包", "select_folder": "选择文件夹", "select_first": "请先选择文件夹或压缩包。",
-        "preparing": "正在准备任务…", "processing": "正在{phase}{suffix}", "password_title": "需要密码",
-        "password_prompt": "无法解压 {name}，请输入密码：", "completed": "任务完成。", "failed": "失败（{stage}）：{reason}",
+        "language": "中/EN", "auto": "自动", "light": "浅色", "dark": "深色",
+        "browse": "压缩包", "browse_folder": "文件夹", "start": "开始解压",
+        "settings": "设置", "library": "密码库",
+        "choose": "就绪",
+        "select_archive": "选择压缩包", "select_folder": "选择文件夹",
+        "select_first": "先选择资源",
+        "preparing": "正在准备任务…", "processing": "正在{phase}{suffix}",
+        "password_title": "需要密码", "password_prompt": "无法解压 {name}，请输入密码：",
+        "completed": "任务完成。", "failed": "失败（{stage}）：{reason}",
         "settings_title": "设置", "save": "保存设置",
+        "brand_subtitle": "游戏资源管理器 · 本地安全处理",
+        "hero_title": "智能解压", "hero_subtitle": "自动识别压缩资源，递归处理并验证输出",
+        "local_badge": "本地处理 · 不上传文件",
+        "input_title": "智能解压", "input_hint": "",
+        "path_label": "路径", "path_placeholder": "",
+        "selected_empty": "未选择资源", "kind_empty": "",
+        "kind_archive": "压缩包", "kind_folder": "文件夹", "kind_file": "文件",
+        "input_archive": "压缩包", "input_folder": "文件夹",
+        "input_note": "",
+        "status_title": "进度", "status_hint": "",
+        "status_ready": "等待开始", "status_running": "任务进行中", "status_done": "全部完成",
+        "status_error": "需要处理", "status_waiting": "等待中",
+        "stage_prepare": "准备任务", "stage_extract": "解压归档",
+        "stage_scan": "扫描内容", "stage_validate": "验证结果", "stage_deliver": "整理交付",
+        "stage_done": "已完成", "stage_active": "进行中", "stage_wait": "等待",
+        "stage_failed": "未完成", "clear": "清除", "input_type": "输入类型",
+        "status_footer": "安全校验 · 保留源文件 · 不显示虚假百分比",
     },
     "en": {
-        "language": "English / 中文", "auto": "Auto", "light": "Light", "dark": "Dark",
-        "browse": "Browse", "start": "Start", "settings": "Settings", "choose": "Choose a folder or archive, then start.",
-        "select_archive": "Select archive", "select_folder": "Select folder", "select_first": "Choose a folder or archive first.",
-        "preparing": "Preparing task…", "processing": "Processing {phase}{suffix}", "password_title": "Password required",
-        "password_prompt": "Unable to extract {name}. Enter the password:", "completed": "Task completed.", "failed": "Failed ({stage}): {reason}",
+        "language": "中/EN", "auto": "Auto", "light": "Light", "dark": "Dark",
+        "browse": "Archive", "browse_folder": "Folder", "start": "Extract",
+        "settings": "Settings", "library": "Password library",
+        "choose": "Ready",
+        "select_archive": "Select archive", "select_folder": "Select folder",
+        "select_first": "Select a resource first.",
+        "preparing": "Preparing task…", "processing": "Processing {phase}{suffix}",
+        "password_title": "Password required", "password_prompt": "Unable to extract {name}. Enter the password:",
+        "completed": "Task completed.", "failed": "Failed ({stage}): {reason}",
         "settings_title": "Settings", "save": "Save settings",
+        "brand_subtitle": "Game resource manager · local processing",
+        "hero_title": "Smart extraction", "hero_subtitle": "Identify archives, process nested resources and verify output",
+        "local_badge": "Local only · No uploads",
+        "input_title": "Smart extraction", "input_hint": "",
+        "path_label": "Path", "path_placeholder": "",
+        "selected_empty": "No resource selected", "kind_empty": "",
+        "kind_archive": "Archive", "kind_folder": "Folder", "kind_file": "File",
+        "input_archive": "Archive", "input_folder": "Folder",
+        "input_note": "",
+        "status_title": "Progress", "status_hint": "",
+        "status_ready": "Ready to start", "status_running": "Task in progress", "status_done": "All done",
+        "status_error": "Action required", "status_waiting": "Waiting",
+        "stage_prepare": "Prepare task", "stage_extract": "Extract archives",
+        "stage_scan": "Scan contents", "stage_validate": "Verify results", "stage_deliver": "Organize delivery",
+        "stage_done": "Done", "stage_active": "In progress", "stage_wait": "Waiting",
+        "stage_failed": "Incomplete", "clear": "Clear", "input_type": "Input type",
+        "status_footer": "Safety checks · Source preserved · No fake percentages",
     },
 }
 
@@ -76,6 +121,8 @@ class GameArchiveApp:
         self.path_value = tk.StringVar()
         self.status_value = tk.StringVar(value=self._text("choose"))
         self.running = False
+        self._password_dialog: PasswordLibraryDialog | None = None
+        self._verified_session_passwords: list[str] = []
         self._surfaces: list[tk.Widget] = []
         self._labels: list[tk.Label] = []
         self.theme_buttons: dict[str, tk.Button] = {}
@@ -86,13 +133,36 @@ class GameArchiveApp:
         self._build()
         self.apply_theme()
         self.apply_language()
-        self.window.geometry(window_place.geometry_for("main", self.window, 720, 520))
+        screen_width = self.window.winfo_screenwidth()
+        screen_height = self.window.winfo_screenheight()
+        target_width = max(780, min(900, screen_width - 80))
+        target_height = max(500, min(520, screen_height - 100))
+        requested = window_place.geometry_for(
+            "main", self.window, target_width, target_height
+        )
+        # Older versions remembered a much larger dashboard. Keep its position,
+        # but cap its saved size so the concise layout actually opens compact.
+        match = re.fullmatch(r"(\d+)x(\d+)([+-]\d+)([+-]\d+)", requested)
+        if match:
+            saved_width, saved_height, x, y = match.groups()
+            requested = (
+                f"{min(int(saved_width), target_width)}x"
+                f"{min(int(saved_height), target_height)}{x}{y}"
+            )
+        self.window.geometry(
+            window_place.fully_visible_geometry(self.window, requested)
+        )
         self.window.update_idletasks()
         self._fit_to_window()
         self.window.update_idletasks()
-        width = max(self.window.winfo_width(), 720)
-        height = max(self.window.winfo_reqheight(), self.window.minsize()[1])
-        self.window.geometry(f"{width}x{height}+{self.window.winfo_x()}+{self.window.winfo_y()}")
+        width = max(self.window.winfo_width(), self.window.minsize()[0])
+        height = max(self.window.winfo_height(), self.window.minsize()[1])
+        requested = (
+            f"{width}x{height}{self.window.winfo_x():+d}{self.window.winfo_y():+d}"
+        )
+        self.window.geometry(
+            window_place.fully_visible_geometry(self.window, requested)
+        )
         self._last_size = (width, height)
         self.window.bind("<Configure>", self._on_window_configure)
         self.window.protocol("WM_DELETE_WINDOW", self._close)
@@ -100,75 +170,316 @@ class GameArchiveApp:
         window_place.restore_maximized("main", self.window)
 
     def _build(self) -> None:
+        """Build the redesigned dashboard while keeping the extraction core intact."""
         self.window.title("GameArchiveManager")
-        self.window.minsize(320, 450)
-        self.font = tkfont.Font(family="Segoe UI", size=12)
-        self.title_font = tkfont.Font(family="Segoe UI", size=18, weight="bold")
+        self.window.minsize(780, 500)
+        self.window.configure(bg="#f3f3f3")
         self.window.columnconfigure(0, weight=1)
-        self.window.rowconfigure(4, weight=1)
+        self.window.rowconfigure(1, weight=1)
 
-        self.title_label = tk.Label(
-            self.window,
-            text="GameArchiveManager",
-            font=self.title_font,
-            anchor="w",
-            justify="left",
-        )
-        self.title_label.grid(row=0, column=0, sticky="ew", padx=16, pady=(12, 8))
-        self._labels.append(self.title_label)
+        self.font = tkfont.Font(family="Segoe UI", size=9)
+        self.title_font = tkfont.Font(family="Segoe UI", size=13, weight="bold")
+        self.section_font = tkfont.Font(family="Segoe UI", size=11, weight="bold")
+        self._surfaces: list[tk.Widget] = []
+        self._cards: list[tk.Widget] = []
+        self._insets: list[tk.Widget] = []
+        self._accent_surfaces: list[tk.Widget] = []
+        self._labels: list[tk.Label] = []
+        self._label_roles: dict[tk.Label, str] = {}
+        self._label_keys: dict[tk.Label, str] = {}
+        self._button_keys: dict[tk.Button, str] = {}
+        self._button_roles: dict[tk.Button, str] = {}
+        self._all_buttons: list[tk.Button] = []
+        self.theme_buttons: dict[str, tk.Button] = {}
+        self.phase_steps: dict[str, dict[str, tk.Widget]] = {}
+        self._active_phase_key: str | None = None
+        self._task_finished = False
+        self.colors = theme.palette("light")
 
-        self.choices = tk.Frame(self.window)
-        self.choices.grid(row=1, column=0, sticky="ew", padx=16, pady=(0, 8))
-        self._surfaces.append(self.choices)
-        self.language_button = tk.Button(
-            self.choices, text=self._text("language"), font=self.font, command=self._toggle_language,
-            relief="flat", bd=0, highlightthickness=2,
-        )
-        self.language_button.grid(row=0, column=0, sticky="nsew")
-        for column, key in enumerate(THEME_LABELS, start=1):
-            self.choices.columnconfigure(column, weight=1, uniform="theme")
-            button = tk.Button(
-                self.choices,
-                text=self._text(key),
-                font=self.font,
-                command=lambda chosen=key: self._choose_theme(chosen),
-                relief="flat",
-                bd=0,
-                highlightthickness=2,
+        def frame(parent, *, role="surface", **kwargs):
+            options = {"bd": 0, "highlightthickness": 0}
+            options.update(kwargs)
+            widget = tk.Frame(parent, **options)
+            if role == "card":
+                widget.configure(highlightthickness=1)
+                self._cards.append(widget)
+            elif role == "inset":
+                widget.configure(highlightthickness=1)
+                self._insets.append(widget)
+            elif role == "accent":
+                self._accent_surfaces.append(widget)
+            else:
+                self._surfaces.append(widget)
+            return widget
+
+        def label(parent, text_or_key, *, role="normal", font=None, variable=None, **kwargs):
+            text_value = self._text(text_or_key) if variable is None else ""
+            widget = tk.Label(
+                parent, text=text_value, textvariable=variable,
+                font=font or self.font, anchor="w", justify="left",
+                bd=0, **kwargs,
             )
-            button.grid(row=0, column=column, sticky="nsew", padx=(0 if column == 0 else 8, 0))
-            self.theme_buttons[key] = button
+            self._labels.append(widget)
+            self._label_roles[widget] = role
+            if variable is None and text_or_key in UI[self.ui_language.get()]:
+                self._label_keys[widget] = text_or_key
+            return widget
 
-        self.path_entry = tk.Entry(self.window, textvariable=self.path_value, font=self.font, relief="flat")
-        self.path_entry.grid(row=2, column=0, sticky="ew", padx=16, pady=(0, 8))
+        def button(parent, key, command, *, role="secondary", **kwargs):
+            widget = tk.Button(
+                parent, text=self._text(key), command=command, font=self.font,
+                relief="flat", bd=0, padx=9, pady=5,
+                highlightthickness=1, **kwargs,
+            )
+            self._all_buttons.append(widget)
+            self._button_keys[widget] = key
+            self._button_roles[widget] = role
+            return widget
 
-        self.actions = tk.Frame(self.window)
-        self.actions.grid(row=3, column=0, sticky="ew", padx=16)
-        self._surfaces.append(self.actions)
-        self.actions.columnconfigure(0, weight=1, uniform="action")
-        self.actions.columnconfigure(1, weight=1, uniform="action")
-        self.browse_button = self._action_button(self.actions, self._text("browse"), self.browse)
-        self.start_button = self._action_button(self.actions, self._text("start"), self.start)
-        self.browse_button.grid(row=0, column=0, sticky="nsew", padx=(0, 4))
-        self.start_button.grid(row=0, column=1, sticky="nsew", padx=(4, 0))
+        # Top bar: product identity at left, language and appearance at right.
+        self.header = frame(self.window)
+        self.header.grid(row=0, column=0, sticky="ew", padx=18, pady=(10, 8))
+        self.header.columnconfigure(2, weight=1)
+        self.logo = frame(self.header, role="accent", width=32, height=32)
+        self.logo.grid(row=0, column=0, sticky="w", padx=(0, 9))
+        self.logo.grid_propagate(False)
+        self.logo_label = label(self.logo, "GA", role="accent", font=("Segoe UI", 13, "bold"))
+        self.logo_label.place(relx=0.5, rely=0.5, anchor="center")
 
-        self.status_panel = tk.Frame(self.window, padx=12, pady=8)
-        self.status_panel.grid(row=4, column=0, sticky="nsew", padx=16, pady=(0, 8))
-        self.status_panel.columnconfigure(0, weight=1)
-        self.status_panel.rowconfigure(0, weight=1)
-        self.status_label = tk.Label(
-            self.status_panel,
-            textvariable=self.status_value,
-            font=self.font,
-            justify="left",
-            anchor="nw",
+        self.brand_title = label(
+            self.header, "GameArchiveManager", font=("Segoe UI", 13, "bold")
         )
-        self.status_label.grid(row=0, column=0, sticky="nsew")
+        self.brand_title.grid(row=0, column=1, sticky="w")
 
-        self.settings_button = self._action_button(self.window, self._text("settings"), self.open_settings)
-        self.settings_button.grid(row=5, column=0, sticky="ew", padx=16, pady=(0, 12))
+        self.choices = frame(self.header)
+        self.choices.grid(row=0, column=3, sticky="e", padx=(12, 0))
+        self.choices.columnconfigure(0, weight=1)
+        self.language_button = button(self.choices, "language", self._toggle_language)
+        self.language_button.grid(row=0, column=0, sticky="ew", padx=(0, 7))
+        for column, key in enumerate(THEME_LABELS, start=1):
+            item = button(
+                self.choices, key, lambda chosen=key: self._choose_theme(chosen),
+                role="theme",
+            )
+            item.grid(row=0, column=column, sticky="ew", padx=(0, 7 if column < 3 else 0))
+            self.theme_buttons[key] = item
+
+        # Compact workspace: resource selection and live progress are primary.
+        self.content = frame(self.window)
+        self.content.grid(row=1, column=0, sticky="nsew", padx=18, pady=(0, 8))
+        self.content.columnconfigure(0, weight=1, uniform="main_card")
+        self.content.columnconfigure(1, weight=1, uniform="main_card")
+        self.content.rowconfigure(0, weight=1)
+
+        self.input_panel = frame(self.content, role="card")
+        self.input_panel.grid(row=0, column=0, sticky="nsew", padx=(0, 6))
+        self.input_panel.columnconfigure(0, weight=1)
+        label(
+            self.input_panel, "input_title", role="card", font=self.section_font
+        ).grid(row=0, column=0, sticky="w", padx=14, pady=(12, 7))
+        label(
+            self.input_panel, "path_label", role="card_muted",
+            font=("Segoe UI", 8, "bold")
+        ).grid(row=1, column=0, sticky="w", padx=14, pady=(0, 3))
+        self.path_entry = tk.Entry(
+            self.input_panel, textvariable=self.path_value, font=("Segoe UI", 9),
+            relief="flat", bd=0, highlightthickness=1,
+        )
+        self.path_entry.grid(row=2, column=0, sticky="ew", padx=14, ipady=5)
+        self.selected_info = frame(self.input_panel, role="inset")
+        self.selected_info.grid(row=3, column=0, sticky="ew", padx=14, pady=(6, 8))
+        self.selected_info.columnconfigure(0, weight=1)
+        self.selected_name_value = tk.StringVar(
+            master=self.window, value=self._text("selected_empty")
+        )
+        self.selected_name_label = label(
+            self.selected_info, "", role="inset",
+            variable=self.selected_name_value, font=("Segoe UI", 9, "bold"),
+        )
+        self.selected_name_label.grid(
+            row=0, column=0, sticky="ew", padx=9, pady=(6, 3)
+        )
+        self.input_kind_value = tk.StringVar(master=self.window, value="")
+        self.input_kind_label = label(
+            self.selected_info, "", role="badge", variable=self.input_kind_value,
+            font=("Segoe UI", 8), padx=7, pady=2,
+        )
+        self.input_kind_label.grid(
+            row=1, column=0, sticky="w", padx=9, pady=(0, 5)
+        )
+
+        self.input_buttons = frame(self.input_panel)
+        self.input_buttons.grid(row=4, column=0, sticky="ew", padx=14, pady=(0, 7))
+        self.input_buttons.columnconfigure(0, weight=1, uniform="input")
+        self.input_buttons.columnconfigure(1, weight=1, uniform="input")
+        self.browse_button = button(self.input_buttons, "input_archive", self.browse)
+        self.folder_button = button(self.input_buttons, "input_folder", self.browse_folder)
+        self.browse_button.grid(row=0, column=0, sticky="ew", padx=(0, 4))
+        self.folder_button.grid(row=0, column=1, sticky="ew", padx=(4, 0))
+        self.start_button = button(self.input_panel, "start", self.start, role="primary")
+        self.start_button.grid(row=5, column=0, sticky="ew", padx=14, pady=(0, 12))
+
+        self.status_panel = frame(self.content, role="card")
+        self.status_panel.grid(row=0, column=1, sticky="nsew", padx=(6, 0))
+        self.status_panel.columnconfigure(0, weight=1)
+        label(
+            self.status_panel, "status_title", role="card",
+            font=self.section_font
+        ).grid(row=0, column=0, sticky="w", padx=14, pady=(12, 7))
+        self.status_banner = frame(self.status_panel, role="inset")
+        self.status_banner.grid(row=1, column=0, sticky="ew", padx=14, pady=(0, 8))
+        self.status_banner.columnconfigure(1, weight=1)
+        self.status_dot = label(
+            self.status_banner, "●", role="badge", font=("Segoe UI", 10, "bold")
+        )
+        self.status_dot.grid(row=0, column=0, sticky="w", padx=(9, 6), pady=5)
+        self.status_label = label(
+            self.status_banner, "", role="inset", variable=self.status_value,
+            font=("Segoe UI", 9, "bold"), wraplength=240,
+        )
+        self.status_label.grid(row=0, column=1, sticky="ew", padx=(0, 9), pady=5)
+
+        self.phase_viewport = frame(self.status_panel)
+        self.phase_viewport.grid(row=2, column=0, sticky="nsew", padx=14)
+        self.phase_viewport.columnconfigure(0, weight=1)
+        self.phase_viewport.rowconfigure(0, weight=1)
+        self.status_panel.rowconfigure(2, weight=1)
+        self.phase_canvas = tk.Canvas(
+            self.phase_viewport, highlightthickness=0, bd=0,
+            yscrollincrement=24,
+        )
+        self.phase_canvas.grid(row=0, column=0, sticky="nsew")
+        self.phase_scrollbar = tk.Scrollbar(
+            self.phase_viewport, orient="vertical",
+            command=self.phase_canvas.yview,
+        )
+        self.phase_canvas.configure(yscrollcommand=self.phase_scrollbar.set)
+        self.phase_scrollbar.grid_remove()
+        self.phase_list = frame(self.phase_canvas)
+        self.phase_list.columnconfigure(0, weight=1)
+        self.phase_window_id = self.phase_canvas.create_window(
+            (0, 0), window=self.phase_list, anchor="nw",
+        )
+        self.phase_list.bind(
+            "<Configure>", lambda event: self._update_phase_scrollregion()
+        )
+        self.phase_canvas.bind("<Configure>", self._on_phase_canvas_configure)
+        self.phase_canvas.bind(
+            "<MouseWheel>",
+            lambda event: self.phase_canvas.yview_scroll(
+                int(-event.delta / 120), "units"
+            ),
+        )
+        phases = ("prepare", "extract", "scan", "validate", "deliver")
+        for index, key in enumerate(phases):
+            row = frame(self.phase_list, role="card")
+            row.grid(row=index, column=0, sticky="ew", pady=(0, 3))
+            row.columnconfigure(1, weight=1)
+            row.rowconfigure(0, weight=1)
+            number = label(row, f"{index + 1:02d}", role="step_badge", font=("Segoe UI", 8, "bold"))
+            number.grid(row=0, column=0, sticky="w", padx=(8, 6), pady=4)
+            title = label(row, f"stage_{key}", role="card", font=("Segoe UI", 9, "bold"))
+            title.grid(row=0, column=1, sticky="w", pady=4)
+            state = label(row, "stage_wait", role="card_muted", font=("Segoe UI", 8))
+            state.grid(row=0, column=2, sticky="e", padx=(4, 8), pady=4)
+            self.phase_steps[key] = {"row": row, "number": number, "title": title, "state": state}
+
+        # Bottom utility bar stays visually separate from the primary action.
+        self.utilities = frame(self.window)
+        self.utilities.grid(row=2, column=0, sticky="ew", padx=18, pady=(0, 8))
+        self.utilities.columnconfigure(0, weight=1)
+        self.library_button = button(self.utilities, "library", self.open_password_library)
+        self.settings_button = button(self.utilities, "settings", self.open_settings)
+        self.library_button.grid(row=0, column=1, sticky="ew", padx=(8, 4))
+        self.settings_button.grid(row=0, column=2, sticky="ew", padx=(4, 0))
+        self.path_value.trace_add("write", lambda *_: self._update_selection_preview())
+        self._update_selection_preview()
+
+    def _on_phase_canvas_configure(self, event) -> None:
+        self.phase_canvas.itemconfigure(self.phase_window_id, width=event.width)
+        self._sync_phase_scrollbar()
+
+    def _update_phase_scrollregion(self) -> None:
+        self.phase_canvas.configure(scrollregion=self.phase_canvas.bbox("all"))
+        self.window.after_idle(self._sync_phase_scrollbar)
+
+    def _sync_phase_scrollbar(self) -> None:
+        if not self.phase_canvas.winfo_exists():
+            return
+        bounds = self.phase_canvas.bbox("all")
+        viewport_height = self.phase_canvas.winfo_height()
+        if bounds and bounds[3] > viewport_height + 2:
+            self.phase_scrollbar.grid(row=0, column=1, sticky="ns")
+        else:
+            self.phase_scrollbar.grid_remove()
+
+    def _update_selection_preview(self) -> None:
+        raw = self.path_value.get().strip().strip('"')
+        if not raw:
+            self.selected_name_value.set(self._text("selected_empty"))
+            self.input_kind_value.set("")
+            self.input_kind_label.grid_remove()
+            return
+        self.input_kind_label.grid(
+            row=1, column=0, sticky="w", padx=9, pady=(0, 5)
+        )
+        path = Path(raw).expanduser()
+        self.selected_name_value.set(path.name or raw)
+        if path.is_dir():
+            kind = "kind_folder"
+        elif path.suffix:
+            kind = "kind_archive"
+        else:
+            kind = "kind_file"
+        suffix = path.suffix.upper().lstrip(".")
+        kind_text = self._text(kind)
+        self.input_kind_value.set(f"{kind_text} · {suffix}" if suffix and kind != "kind_folder" else kind_text)
+
+    def _render_phase_steps(self, *, done: bool = False, failed: bool = False) -> None:
+        colors = getattr(self, "colors", theme.palette("light"))
+        keys = ("prepare", "extract", "scan", "validate", "deliver")
+        active_index = keys.index(self._active_phase_key) if self._active_phase_key in keys else -1
+        for index, key in enumerate(keys):
+            item = self.phase_steps.get(key)
+            if not item:
+                continue
+            if done:
+                marker, state, role = "✓", "stage_done", "done"
+            elif failed and index == active_index:
+                marker, state, role = "!", "stage_failed", "failed"
+            elif active_index >= 0 and index < active_index:
+                marker, state, role = "✓", "stage_done", "done"
+            elif active_index == index:
+                marker, state, role = "●", "stage_active", "active"
+            else:
+                marker, state, role = f"{index + 1:02d}", "stage_wait", "wait"
+            item["number"].configure(text=marker)
+            item["state"].configure(text=self._text(state))
+            if role == "active":
+                bg, fg = colors["accent"], colors["accent_fg"]
+                title_fg, state_fg = colors["fg"], colors["accent"]
+            elif role == "done":
+                bg, fg = colors["ok"], "#ffffff" if colors["bg"] != "#1e1e1e" else "#102a1d"
+                title_fg, state_fg = colors["fg"], colors["ok"]
+            elif role == "failed":
+                bg, fg = colors["danger"], "#ffffff"
+                title_fg, state_fg = colors["danger"], colors["danger"]
+            else:
+                bg, fg = colors["entry_bg"], colors["muted"]
+                title_fg, state_fg = colors["fg"], colors["muted"]
+            item["number"].configure(background=bg, foreground=fg)
+            item["title"].configure(foreground=title_fg)
+            item["state"].configure(foreground=state_fg)
 
     def _close(self) -> None:
+        if self._resize_job is not None:
+            try:
+                self.window.after_cancel(self._resize_job)
+            except tk.TclError:
+                pass
+            self._resize_job = None
+        if self._password_dialog is not None and self._password_dialog.dialog.winfo_exists():
+            self._password_dialog.close()
         window_place.remember("main", self.window)
         self.window.destroy()
 
@@ -189,54 +500,22 @@ class GameArchiveApp:
         self._last_size = (self.window.winfo_width(), self.window.winfo_height())
 
     def _fit_to_window(self) -> None:
+        """Reflow header controls and text without jittering fonts during resize."""
         if self._fitting:
             return
         width = max(self.window.winfo_width(), 1)
-        height = max(self.window.winfo_height(), 1)
         if width < 2:
             return
         self._fitting = True
         try:
-            scale = max(0.9, min(width / 720, 1.45))
-            self.font.configure(size=max(11, round(12 * scale)))
-            self.title_font.configure(size=max(12, round(18 * scale)))
-            band = max(34, round(40 * scale))
-            for button in (self.language_button, *self.theme_buttons.values(), self.browse_button, self.start_button, self.settings_button):
-                button.configure(pady=max(6, round(8 * scale)))
-            self.choices.rowconfigure(0, minsize=band)
-            self.actions.rowconfigure(0, minsize=band)
             self._place_choices(width)
-            self.window.update_idletasks()
-            entry_gap = max(0, self.browse_button.winfo_reqheight() - self.path_entry.winfo_reqheight())
-            self.path_entry.grid_configure(ipady=entry_gap // 2)
-            self.window.rowconfigure(2, minsize=self.browse_button.winfo_reqheight())
-            inner = max(160, width - 32)
-            # Never split the product name through the middle.  The title font
-            # shrinks first, then its measured width becomes the resize floor.
-            self.title_label.configure(wraplength=0)
-            self.status_label.configure(wraplength=max(120, inner - 24))
-            self.window.update_idletasks()
-            status_h = self.status_label.winfo_reqheight() + 24
-            self.window.rowconfigure(4, minsize=status_h)
-            needed_h = (
-                self.title_label.winfo_reqheight()
-                + self.choices.winfo_reqheight()
-                + self.path_entry.winfo_reqheight()
-                + self.actions.winfo_reqheight()
-                + status_h
-                + self.settings_button.winfo_reqheight()
-                + 64
-            )
-            title_floor = self.title_font.measure("GameArchiveManager") + 32
-            button_floor = max(
-                self.font.measure(self._text("language")) + 32,
-                max(self.font.measure(self._text(key)) + 28 for key in THEME_LABELS),
-                self.font.measure(self._text("browse")) + self.font.measure(self._text("start")) + 44,
-            )
-            self.window.minsize(max(320, title_floor, button_floor), needed_h)
-
+            inner = max(240, width - 36)
+            self.selected_name_label.configure(wraplength=max(160, int(inner * 0.46)))
+            self.status_label.configure(wraplength=max(160, int(inner * 0.38)))
+            self.window.minsize(780, 500)
         finally:
             self._fitting = False
+
 
     def _action_button(self, parent: tk.Widget, text: str, command) -> tk.Button:
         return tk.Button(
@@ -300,28 +579,71 @@ class GameArchiveApp:
         warning = settings_panel.save_form_values(self.config_path, values)
         if warning:
             self.status_value.set(warning)
-        else:
-            self.status_value.set(self._text("choose"))
         self.apply_language()
 
     def apply_language(self) -> None:
-        self.language_button.configure(text=self._text("language"))
-        for key, button in self.theme_buttons.items():
-            button.configure(text=self._text(key))
-        self.browse_button.configure(text=self._text("browse"))
-        self.start_button.configure(text=self._text("start"))
-        self.settings_button.configure(text=self._text("settings"))
+        for widget, key in self._label_keys.items():
+            widget.configure(text=self._text(key))
+        for widget, key in self._button_keys.items():
+            widget.configure(text=self._text(key))
+        if not self.running and not self._task_finished:
+            self.status_value.set(self._text("choose"))
+        self._update_selection_preview()
         self._place_choices(self.window.winfo_width())
+        self._fit_to_window()
+        self._render_phase_steps()
+
 
     def apply_theme(self) -> None:
         colors = theme.palette(theme.resolved_appearance(self.theme_mode.get()))
+        self.colors = colors
         self.window.configure(background=colors["bg"])
-        for surface in self._surfaces:
-            surface.configure(background=colors["bg"])
-        for label in self._labels:
-            label.configure(background=colors["bg"], foreground=colors["fg"])
-        self.status_panel.configure(background=colors["surface"])
-        self.status_label.configure(background=colors["surface"], foreground=colors["fg"])
+        for widget in self._surfaces:
+            widget.configure(background=colors["bg"])
+        for widget in self._cards:
+            widget.configure(
+                background=colors["surface"],
+                highlightbackground=colors["border"],
+                highlightcolor=colors["border"],
+            )
+        for widget in self._insets:
+            widget.configure(
+                background=colors["entry_bg"],
+                highlightbackground=colors["border"],
+                highlightcolor=colors["accent"],
+            )
+        for widget in self._accent_surfaces:
+            widget.configure(background=colors["accent"])
+        self.phase_viewport.configure(background=colors["surface"])
+        self.phase_list.configure(background=colors["surface"])
+        self.phase_canvas.configure(
+            background=colors["surface"],
+            highlightbackground=colors["border"],
+        )
+        self.phase_scrollbar.configure(
+            background=colors["surface"],
+            troughcolor=colors["entry_bg"],
+            activebackground=colors["accent"],
+            highlightbackground=colors["border"],
+            relief="flat",
+            borderwidth=0,
+        )
+        for widget, role in self._label_roles.items():
+            if role in {"card", "card_muted"}:
+                background = colors["surface"]
+            elif role in {"inset", "step_badge"}:
+                background = colors["entry_bg"]
+            elif role in {"accent", "badge"}:
+                background = colors["accent"]
+            else:
+                background = colors["bg"]
+            foreground = (
+                colors["muted"] if role in {"muted", "card_muted"}
+                else colors["accent_fg"] if role in {"accent", "badge"}
+                else colors["accent"] if role == "step_badge"
+                else colors["fg"]
+            )
+            widget.configure(background=background, foreground=foreground)
         self.path_entry.configure(
             background=colors["entry_bg"],
             foreground=colors["fg"],
@@ -330,39 +652,60 @@ class GameArchiveApp:
             highlightbackground=colors["border"],
             highlightcolor=colors["accent"],
         )
-        for key, button in self.theme_buttons.items():
-            selected = key == self.theme_mode.get()
-            button.configure(
-                background=colors["accent"] if selected else colors["surface"],
-                foreground=colors["accent_fg"] if selected else colors["fg"],
-                activebackground=colors["accent"],
-                activeforeground=colors["accent_fg"],
-                highlightthickness=2,
+        for widget, role in self._button_roles.items():
+            key = self._button_keys.get(widget, "")
+            if role == "primary":
+                background, foreground = colors["accent"], colors["accent_fg"]
+                active_background = colors["accent"]
+            elif role == "theme" and key == self.theme_mode.get():
+                background, foreground = colors["accent"], colors["accent_fg"]
+                active_background = colors["accent"]
+            else:
+                background, foreground = colors["surface"], colors["fg"]
+                active_background = colors["entry_bg"]
+            widget.configure(
+                background=background,
+                foreground=foreground,
+                activebackground=active_background,
+                activeforeground=foreground,
                 highlightbackground=colors["border"],
                 highlightcolor=colors["accent"],
+                cursor="hand2",
+                disabledforeground=colors["muted"],
             )
-        for button in (self.language_button, self.browse_button, self.settings_button):
-            button.configure(
-                background=colors["surface"],
-                foreground=colors["fg"],
-                activebackground=colors["accent"],
-                activeforeground=colors["accent_fg"],
-                highlightthickness=2,
-                highlightbackground=colors["border"],
-                highlightcolor=colors["accent"],
+        self._render_phase_steps()
+        if self._password_dialog is not None and self._password_dialog.dialog.winfo_exists():
+            self._password_dialog.apply_colors(colors)
+
+
+    def open_password_library(self, parent=None) -> None:
+        if self._password_dialog is not None and self._password_dialog.dialog.winfo_exists():
+            self._password_dialog.dialog.lift()
+            self._password_dialog.dialog.focus_force()
+            return
+        try:
+            self._password_dialog = PasswordLibraryDialog(
+                parent or self.window,
+                language=self.ui_language.get(),
+                colors=theme.palette(theme.resolved_appearance(self.theme_mode.get())),
             )
-        self.start_button.configure(
-            background=colors["accent"],
-            foreground="#ffffff",
-            activebackground=colors["accent"],
-            activeforeground=colors["accent_fg"],
-            highlightthickness=2,
-            highlightbackground=colors["border"],
-            highlightcolor=colors["accent"],
-        )
+        except PasswordStoreError as error:
+            self.status_value.set(str(error))
+            messagebox.showerror(self._text("library"), str(error), parent=self.window)
 
     def browse(self) -> None:
-        path = filedialog.askopenfilename(title=self._text("select_archive")) or filedialog.askdirectory(title=self._text("select_folder"))
+        path = filedialog.askopenfilename(
+            title=self._text("select_archive"),
+            filetypes=(
+                ("压缩包 / Archives", "*.zip *.7z *.rar *.tar *.gz *.bz2 *.xz *.lz4 *.zst *.cab *.iso *.wim *.001"),
+                ("所有文件 / All files", "*.*"),
+            ),
+        )
+        if path:
+            self.path_value.set(path)
+
+    def browse_folder(self) -> None:
+        path = filedialog.askdirectory(title=self._text("select_folder"))
         if path:
             self.path_value.set(path)
 
@@ -374,26 +717,52 @@ class GameArchiveApp:
         if self.running:
             return
         self.running = True
+        self._task_finished = False
+        self._active_phase_key = "prepare"
         self.start_button.configure(state="disabled")
         self.status_value.set(self._text("preparing"))
+        self._render_phase_steps()
         threading.Thread(target=self._run_task, args=(path,), daemon=True).start()
 
     def _run_task(self, path: str) -> None:
         try:
-            report = GameArchiveService().execute_task(
+            # Reload settings for each task but preserve passwords verified
+            # during this GUI session even when persistent saving is disabled.
+            service = GameArchiveService(config_path=self.config_path)
+            for password in self._verified_session_passwords:
+                service.session_password_store.add_verified(password, persist=False)
+            report = service.execute_task(
                 path,
                 progress_callback=self._progress,
                 manual_password_callback=self._request_manual_password,
             )
-            self.window.after(0, self._finish, report)
+            self._verified_session_passwords = service.session_password_store.verified_passwords()
+            warning = service.session_password_store.last_persistence_error
+            self.window.after(0, self._finish, report, warning)
         except Exception as error:
             self.window.after(0, self._fail, "APPLICATION", f"{type(error).__name__}: {error}")
 
     def _progress(self, update) -> None:
-        phase = getattr(getattr(update, "phase", None), "value", getattr(update, "phase", "PROCESSING"))
+        phase = str(getattr(getattr(update, "phase", None), "value", getattr(update, "phase", "PROCESSING"))).upper()
+        phase_map = {
+            "EXTRACTING": "extract", "SCANNING": "scan",
+            "VALIDATING": "validate", "ORGANIZING": "deliver",
+            "DELIVERING": "deliver", "PREPARING": "prepare",
+        }
+        phase_key = phase_map.get(phase, self._active_phase_key or "prepare")
         archive = getattr(update, "current_archive", None)
-        message = self._text("processing", phase=phase, suffix=f": {archive}" if archive else "…")
-        self.window.after(0, self.status_value.set, message)
+        phase_label = self._text(f"stage_{phase_key}")
+        message = self._text(
+            "processing",
+            phase=phase_label,
+            suffix=f": {archive}" if archive else "…",
+        )
+        self.window.after(0, self._apply_progress, phase_key, message)
+
+    def _apply_progress(self, phase_key: str, message: str) -> None:
+        self._active_phase_key = phase_key
+        self.status_value.set(message)
+        self._render_phase_steps()
 
     def _request_manual_password(self, request) -> ManualPasswordResponse:
         """Ask on Tk's thread; the recovery engine stores only verified input."""
@@ -416,7 +785,7 @@ class GameArchiveApp:
             return ManualPasswordResponse(ManualPasswordAction.INPUT_PASSWORD, password)
         return ManualPasswordResponse(ManualPasswordAction.SKIP_ARCHIVE)
 
-    def _finish(self, report) -> None:
+    def _finish(self, report, password_warning: str | None = None) -> None:
         self.running = False
         self.start_button.configure(state="normal")
         if getattr(report, "failed_count", 0):
@@ -425,12 +794,28 @@ class GameArchiveApp:
             reason = getattr(detail, "reason", getattr(report, "summary", "任务失败"))
             self._fail(stage, reason)
             return
-        self.status_value.set(self._text("completed"))
+        self._task_finished = True
+        self._active_phase_key = "deliver"
+        self.status_value.set(
+            self._text("completed") + (f" {password_warning}" if password_warning else "")
+        )
+        self._render_phase_steps(done=True)
+        self.status_dot.configure(foreground=self.colors["ok"])
 
     def _fail(self, stage: str, reason: str) -> None:
         self.running = False
+        self._task_finished = False
         self.start_button.configure(state="normal")
         self.status_value.set(self._text("failed", stage=stage, reason=reason))
+        stage_upper = str(stage).upper()
+        phase_map = {
+            "EXTRACTING": "extract", "SCANNING": "scan",
+            "VALIDATING": "validate", "ORGANIZING": "deliver",
+            "DELIVERY": "deliver", "APPLICATION": self._active_phase_key or "prepare",
+        }
+        self._active_phase_key = phase_map.get(stage_upper, self._active_phase_key or "prepare")
+        self._render_phase_steps(failed=True)
+        self.status_dot.configure(foreground=self.colors["danger"])
 
     def open_settings(self) -> None:
         dialog = tk.Toplevel(self.window)
@@ -482,10 +867,18 @@ class GameArchiveApp:
             dialog.title(self._text("settings_title"))
             save_button.configure(text=self._text("save"))
 
-        form = settings_panel.build(
-            holder, self.config_path, colors, on_theme=on_theme,
-            language=self.ui_language.get(), on_language=on_language,
-        )
+        try:
+            form = settings_panel.build(
+                holder, self.config_path, colors, on_theme=on_theme,
+                language=self.ui_language.get(), on_language=on_language,
+                on_password_library=lambda: self.open_password_library(parent=dialog),
+            )
+        except PasswordStoreError as error:
+            # A damaged library must not be presented as empty or saved over.
+            dialog.destroy()
+            self.status_value.set(str(error))
+            messagebox.showerror(self._text("settings_title"), str(error), parent=self.window)
+            return
         form.grid(row=0, column=0, sticky="ew")
 
         save_bar = tk.Frame(dialog, bg=colors["bg"], height=36)

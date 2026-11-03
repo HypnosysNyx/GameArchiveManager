@@ -95,6 +95,11 @@ class ExtractionCoordinator:
             content_inspector=self.content_inspector,
             extraction_safety_checker=self.extraction_safety_checker,
         )
+        self.embedded_limits = {
+            "timeout_seconds": active_settings.extraction_timeout_seconds,
+            "process_timeout_seconds": active_settings.extraction_timeout_seconds,
+        }
+        self.embedded_validator = None
         self.embedded_extractor = embedded_extractor or EmbeddedExtractor(
             analyzer=self.analyzer
         )
@@ -106,6 +111,7 @@ class ExtractionCoordinator:
         max_password_attempts: int = 20,
         manual_password_callback: ManualPasswordCallback | None = None,
         session_password_store: SessionPasswordStore | None = None,
+        cancelled=None,
     ) -> CoordinatorResult:
         """分析并处理一个压缩包，不递归、不整理、不删除文件。"""
         archive = Path(archive_path).expanduser().resolve()
@@ -122,7 +128,17 @@ class ExtractionCoordinator:
 
         try:
             steps.append("开始分析文件真实格式")
-            archive_info = self.analyzer.analyze(archive)
+            if isinstance(self.analyzer, ArchiveAnalyzer):
+                # Execution owns a single resumable scan and its global budgets.
+                # Preview callers retain the analyzer's provisional detection.
+                archive_info = self.analyzer.analyze(archive, scan_embedded=False)
+                if (archive_info.real_format == "UNKNOWN"
+                        and self.analyzer._allows_embedded_scan(archive)):
+                    archive_info = replace(archive_info, is_embedded_archive=True,
+                        embedded_container_format="UNKNOWN",
+                        container_chain=[self.analyzer.embedded_detector.get_host_format(archive), "UNKNOWN"])
+            else:
+                archive_info = self.analyzer.analyze(archive)
             steps.append(
                 f"分析结果: 扩展名={archive_info.extension or '无'}, "
                 f"真实格式={archive_info.real_format}, "
@@ -175,32 +191,10 @@ class ExtractionCoordinator:
                 )
 
             if plan.is_embedded_archive:
-                steps.append(
-                    "提取内嵌压缩包: "
-                    f"offset={plan.embedded_offset}, "
-                    f"format={plan.embedded_container_format}"
-                )
-                embedded_result = self.embedded_extractor.extract(plan)
-                steps.append(
-                    "内嵌压缩包提取状态: "
-                    f"{embedded_result.status.value} - {embedded_result.message}"
-                )
-                if embedded_result.status is ExtractionStatus.SUCCESS:
-                    return self._validate_success_result(
-                        archive, embedded_result, steps
-                    )
-                return CoordinatorResult(
-                    success=False,
-                    archive_path=archive,
-                    extraction_result=embedded_result,
-                    steps=steps,
-                    error_message=(
-                        embedded_result.error or embedded_result.message
-                    ),
-                    failure_stage="EMBEDDED_EXTRACTION",
-                    error_type="EMBEDDED_EXTRACTION_FAILED",
-                    user_message="无法提取内嵌压缩包",
-                )
+                from coordinator.embedded_resolver import EmbeddedResolver
+                return EmbeddedResolver(self, plan, candidates, max_password_attempts,
+                    manual_password_callback, session_password_store, steps,
+                    cancelled or (lambda: False)).run()
 
             if plan.is_composite:
                 composite_result = self.composite_extractor.extract(

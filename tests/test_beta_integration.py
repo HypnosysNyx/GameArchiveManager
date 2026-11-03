@@ -662,13 +662,14 @@ class BetaIntegrationTest(unittest.TestCase):
             result = runner.run(jpeg_rar)
 
             self.assertTrue(result.success, result.steps)
-            self.assertEqual(len(result.execution_records), 2)
+            # The host retains candidate context until data validation succeeds.
+            self.assertEqual(len(result.execution_records), 1)
             self.assertEqual(
                 [record.depth for record in result.execution_records],
-                [0, 1],
+                [0],
             )
-            carved_record = result.execution_records[1]
-            self.assertEqual(carved_record.archive_path.suffix, ".rar")
+            carved_record = result.execution_records[0]
+            self.assertEqual(carved_record.archive_path, jpeg_rar.resolve())
             self.assertEqual(
                 (carved_record.output_path / "payload.txt").read_text(
                     encoding="utf-8"

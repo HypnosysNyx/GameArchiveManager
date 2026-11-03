@@ -4,7 +4,7 @@
 from version import APP_NAME, APP_VERSION, BUILD_TYPE
 
 
-if BUILD_TYPE != "Release":
+if BUILD_TYPE not in ("Release", "Release Candidate"):
     raise RuntimeError("Official build requires BUILD_TYPE='Release'")
 
 release_directory = f"{APP_NAME}-{APP_VERSION}"

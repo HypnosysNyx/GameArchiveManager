@@ -1,0 +1,2 @@
+# Runtime dependencies: Python standard library only.
+# Build-only dependency is listed separately in requirements-build.txt.

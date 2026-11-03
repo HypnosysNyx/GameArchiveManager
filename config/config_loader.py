@@ -116,6 +116,8 @@ class ConfigLoader:
             "ignore_android": lambda value: type(value) is bool,
             "ignore_AZ": lambda value: type(value) is bool,
             "ignore_pc": lambda value: type(value) is bool,
+            "save_passwords": lambda value: type(value) is bool,
+            "auto_try_password": lambda value: type(value) is bool,
             "seven_zip_path": is_optional_path,
             "winrar_path": is_optional_path,
             "lz4_path": is_optional_path,

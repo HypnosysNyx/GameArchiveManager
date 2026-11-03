@@ -73,7 +73,9 @@ class GameArchiveService:
         self.history_storage = history_storage or HistoryStorage(
             default_history_file()
         )
-        self.session_password_store = SessionPasswordStore()
+        self.session_password_store = SessionPasswordStore(
+            persist_verified=self.settings.save_passwords
+        )
         self.tool_manager = self._create_tool_manager()
         self.task_executor = task_executor or self._create_task_executor(
             self.tool_manager

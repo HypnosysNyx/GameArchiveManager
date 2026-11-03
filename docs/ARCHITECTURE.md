@@ -1,5 +1,7 @@
 # GameArchiveManager 软件架构
 
+> 维护提示（2026-10-25）：此文档描述当前代码模块边界；正式发布状态与未提交工作树状态分开记录，见 [START_HERE.md](../START_HERE.md) 和 [CURRENT_STATUS.md](CURRENT_STATUS.md)。桌面 UI 在 gui/，不是 ui/；ui/ 目前为空占位包，没有运行时导入。
+
 ## 当前范围
 
 GameArchiveManager 是面向 Windows 的游戏资源扫描、分析和递归解压管理器。当前版本以 Python 标准库为主，通过外部 7-Zip、WinRAR 和 LZ4 Adapter执行已验证的解压计划。缺少 7-Zip 或 `lz4.exe` 时先询问，同意后才从官方发布安装。图形窗口在 `gui/app.py`，命令行仍从 `main.py` 进入。
@@ -21,7 +23,7 @@ GameArchiveManager 是面向 Windows 的游戏资源扫描、分析和递归解�
 | `tools` | 发现和保存 7-Zip、WinRAR、LZ4 的工具路径状态 |
 | `extractor` | 通过 Dispatcher 调度 7-Zip、WinRAR、LZ4 Adapter，并执行受控复合容器阶段；不负责任务级递归、整理或删除 |
 | `coordinator` | 串联单个压缩包的分析、安全检查、计划、解压和密码恢复 |
-| `password` | 保存密码候选，计算候选分数并排序；用 Windows DPAPI 加密保存已验证密码到本机用户目录 |
+| `password` | 保存密码候选、计算分数并排序；仅在设置允许时用 Windows DPAPI 持久化成功验证的密码 |
 | `recovery` | 有限次数选择密码并连接 Extractor；成功密码交给 SessionPasswordStore |
 | `pipeline` | 管理递归压缩包队列、深度、数量、重复路径和执行记录 |
 | `report` | 将 TaskExecutionResult 或 PipelineResult 转为统一 TaskReport |
@@ -29,7 +31,8 @@ GameArchiveManager 是面向 Windows 的游戏资源扫描、分析和递归解�
 | `logging_system` | 为每个服务任务创建脱敏日志文件 |
 | `cleanup` | RuntimeTracker 记录本次运行拥有的技术目录；CleanupManager 仅删除通过边界检查并已授权的目录 |
 | `organizer` | 判断最终内容根、折叠技术执行 lineage 为 DeliveryUnit、检测重复内容，并安全交付到 `GameArchive_Output` |
-| `gui` | 桌面窗口：外观、语言、窗口位置、设置和任务启动 |
+| `gui` | 桌面窗口：主窗口、进度呈现、外观/语言、设置和密码库管理；`gui/app.py` 当前仍承载较多视图与事件逻辑，后续可在有测试保护下拆分 |
+| `ui` | 目前只有空的 `__init__.py`，没有运行时导入；属于未清理占位包，不是桌面 UI 入口 |
 
 ## 数据流程
 
@@ -85,7 +88,7 @@ Application start
 
 Session-scoped对象：Settings、ToolManager、HistoryStorage、GameArchiveService、SessionPasswordStore、CLI controller。Task-scoped对象：Task、analysis result、Pipeline/queue/Guard、RuntimeTracker/cleanup ownership、TaskReport、task password candidates、cancel/progress/output planning state。`ExtractionPipelineRunner`可以作为无任务状态的协作对象复用，但其`run()`每次必须新建Pipeline和Guard计数。
 
-只有实际解压成功的密码才进入 `SessionPasswordStore`。它使用当前 Windows 用户的 DPAPI 加密写入本机密码库，重启后仍可作为候选使用；错误密码不保存。任务目录中的空文件夹候选每次重新分析，不跨任务复用。密码明文不写入日志、报告或历史。
+只有实际验证成功的密码才进入 `SessionPasswordStore` 的已验证会话列表。设置项 `save_passwords` 默认关闭；仅开启时才将成功密码用当前 Windows 用户 DPAPI 加密写入本机密码库。设置项 `auto_try_password` 默认关闭；仅开启时将已保存密码加入后续自动候选。错误密码不持久化。任务目录中的空文件夹候选每次重新分析，不跨任务复用。密码明文不写入日志、报告或历史。
 
 ## Task 生命周期
 
@@ -157,6 +160,12 @@ SUCCESS 时停止；WRONG_PASSWORD 时继续
 - 最大尝试次数由 `max_password_attempts` 限制，绝对上限为 100。
 - 密码明文不会写入 TaskReport、HistoryStorage 或 GameLogger。
 - 密码库仅保存在当前 Windows 用户本机的 DPAPI 加密文件中，不上传，也不记录密码成功次数。
+
+## 当前结构/维护注意事项
+
+- `gui/app.py` 同时管理控件树、布局、语言/主题、文件选择、任务线程回调和进度状态。当前有 GUI 测试保护，但文件较大；后续若拆分，建议按 View/Controller/状态适配器逐步拆，避免一次性重写。
+- `main.py` 是 CLI 入口，`ui/` 不是 UI 实现。不要新建第二套 UI 到空的 `ui/` 包而不先做架构决策。
+- 根目录 `requirements.txt` 说明运行时仅使用 Python 标准库；PyInstaller 属于构建依赖，外部归档工具单独管理。
 
 ## 当前未实现
 

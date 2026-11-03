@@ -2,7 +2,9 @@
 
 from dataclasses import dataclass, field
 from enum import Enum
+import os
 from pathlib import Path
+import stat
 
 from analyzer.archive_analyzer import ArchiveAnalyzer
 from analyzer.models import ArchiveInfo
@@ -102,6 +104,9 @@ class TaskAnalyzer:
                     scan_mode=ArchiveScanMode.INITIAL_SCAN,
                 )
                 self._copy_initial_scan_diagnostics(result)
+                result.password_candidates = self._explicit_sibling_passwords(
+                    explicit_archive
+                )
                 result.analysis_status = AnalysisStatus.COMPLETED
                 return result
 
@@ -153,6 +158,49 @@ class TaskAnalyzer:
             result.error_message = str(error)
 
         return result
+
+    def _explicit_sibling_passwords(
+        self, archive_path: Path
+    ) -> list[PasswordCandidate]:
+        """Collect only immediate empty real directories beside the selection."""
+        parent = Path(archive_path).expanduser().absolute().parent
+        password_manager = PasswordManager()
+        reparse_flag = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+        try:
+            parent_stat = parent.lstat()
+            if (not stat.S_ISDIR(parent_stat.st_mode)
+                    or getattr(parent_stat, "st_file_attributes", 0) & reparse_flag):
+                return []
+            with os.scandir(parent) as entries:
+                siblings = sorted(
+                    (Path(entry.path) for entry in entries),
+                    key=lambda path: (path.name.casefold(), path.name),
+                )
+        except OSError:
+            return []
+
+        for sibling in siblings:
+            try:
+                metadata = sibling.lstat()
+                if (not stat.S_ISDIR(metadata.st_mode)
+                        or getattr(metadata, "st_file_attributes", 0) & reparse_flag):
+                    continue
+                # Read at most one entry; never recurse or open file contents.
+                with os.scandir(sibling) as entries:
+                    if next(entries, None) is not None:
+                        continue
+                password_manager.add_folder_name_candidate(
+                    sibling,
+                    platform_hint=(
+                        PlatformHint.ANDROID
+                        if self.scanner._is_ignored(sibling.name)
+                        else PlatformHint.UNKNOWN
+                    ),
+                )
+            except OSError:
+                # Unreadable/disappearing siblings are not proven empty.
+                continue
+        return password_manager.get_candidates_by_priority()
 
     def _historical_technical_roots(self, task_path: Path) -> set[Path]:
         """Load only persisted run-owned residual paths for this task root."""

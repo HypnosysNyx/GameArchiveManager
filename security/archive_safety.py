@@ -46,10 +46,19 @@ class ArchiveSafetyChecker:
         else:
             max_size = self.settings.max_archive_size_mb * self.BYTES_PER_MB
             if file_size > max_size:
-                reasons.append(
-                    "压缩包大小超过限制: "
-                    f"{file_size} 字节 > {max_size} 字节"
-                )
+                if archive_info.is_multi_volume and archive_info.volume_files:
+                    reasons.append(
+                        "分卷归档总大小超过限制 "
+                        f"（{len(files_to_measure)} 卷合计）："
+                        f"{file_size} 字节 > {max_size} 字节。"
+                        "可在设置中提高“最大归档大小（MB）”，"
+                        "并确认目标磁盘有足够空间后重试。"
+                    )
+                else:
+                    reasons.append(
+                        "压缩包大小超过限制: "
+                        f"{file_size} 字节 > {max_size} 字节"
+                    )
 
         if content_info is not None:
             warnings.extend(content_info.warnings)
