@@ -22,14 +22,16 @@ A Windows and Linux desktop/CLI tool for sorting out game-resource archives.
 
 Downloaded resource packs are often messy: the extension may be wrong, several archive layers may be wrapped together, a split volume may be missing, or a RAR may be hiding inside a JPEG. GameArchiveManager checks file signatures, extracts archives layer by layer, and copies content that looks like a game root into a fresh output directory.
 
-It is not a save-game manager. It has a desktop window and a command-line window. If 7-Zip or the LZ4 command-line tool is missing, the program asks before downloading it from the official site; it never connects in the background. The newest cross-platform preview is [v0.3.0-rc.1](https://github.com/HypnosysNyx/GameArchiveManager/releases/tag/v0.3.0-rc.1), offering a Windows x64 GUI/CLI portable zip and a Linux Python wheel. This is a release candidate: large encrypted nested sample and clean Windows 11 VM acceptance remain pending. Earlier v0.2.0 was source-only.
+It is not a save-game manager. It has a desktop window and a command-line window. On Windows, missing 7-Zip or LZ4 tools can be installed with your confirmation. Linux uses native system packages; the application does not run the Windows tool-download flow. The newest cross-platform preview is [v0.3.0-rc.1](https://github.com/HypnosysNyx/GameArchiveManager/releases/tag/v0.3.0-rc.1), offering a Windows x64 GUI/CLI portable zip and a Linux Python wheel. This is a release candidate: large encrypted nested sample and clean Windows 11 VM acceptance remain pending. Earlier v0.2.0 was source-only.
 
 ## Before you start
 
 Linux support uses the same source code. For native Ubuntu dependencies, pipx installation,
 and local/Git-source upgrades, see [Linux setup](docs/LINUX.md). The same core code is shipped for both platforms. The Windows instructions follow below.
 
-- Windows 10 or 11
+**Windows requirements:**
+
+- Windows 10 or 11 (x64)
 - 64-bit [7-Zip](https://www.7-zip.org/), installed in its default location
 - `lz4.exe` if you need to process `.lz4` files
 - WinRAR as an optional fallback extractor for RAR archives
@@ -90,7 +92,7 @@ py main.py
 
 `pyw gui\app.py` opens the window without a black console. `py main.py` opens the command line. You can also run `start_game_archive_manager.bat` for the command line. Build dependencies are listed in [`requirements-build.txt`](requirements-build.txt).
 
-### What changed in 0.2.0
+### Earlier release: changes introduced in 0.2.0
 
 - A desktop window, with no black console when started by `pyw`.
 - Light, dark, and automatic appearance, applied immediately and remembered. Chinese and English are remembered too.
@@ -102,6 +104,14 @@ py main.py
 - If `lz4.exe` is missing, the program asks, then installs the official Windows build.
 - A failed task records the stage and the reason in the log, the report, and history.
 - Scanning is faster. Signature, CRC, and SHA-256 checks remain.
+
+### What's new in v0.3.0 RC1
+
+- Shared Windows and Linux source; native Linux system tools, XDG user data paths and pipx installation/update support.
+- Fixed empty-folder password candidate discovery for directly selected archive files.
+- Better embedded RAR5 candidate validation diagnostics, with safe bounded scanning.
+- Separate Windows x64 GUI/CLI executables and a Linux wheel.
+- **Still unverified:** final multi-GiB encrypted inner-archive delivery and a fresh Windows 11 VM acceptance test.
 
 ## License
 
@@ -122,7 +132,7 @@ Linux 与 Windows 共用源码。原生 Ubuntu 依赖、pipx 安装及本地/Git
 
 网上下载的资源包经常不太规矩：扩展名是假的，外面套着好几层，分卷缺了一块，或者 JPEG 里面藏着 RAR。这个程序会先看文件头，再按层解包，最后把看起来像游戏根目录的内容复制到一个新的输出目录里。
 
-它不是存档管理器。可以开桌面窗口，也可以用命令行。缺少 7-Zip 或 LZ4 命令行工具时会先问你，同意后才从官方地址下载，不会在后台偷偷联网。最新跨平台预发布是 [v0.3.0-rc.1](https://github.com/HypnosysNyx/GameArchiveManager/releases/tag/v0.3.0-rc.1)，提供 Windows x64 图形界面/命令行便携包和 Linux Python wheel。大体积嵌套加密真实样本与干净 Windows 11 虚拟机验收仍未完成，因此标为 RC。之前的 v0.2.0 仅发布源码。
+它不是存档管理器。可以开桌面窗口，也可以用命令行。Windows 缺少 7-Zip 或 LZ4 时可在确认后安装；Linux 应通过系统包管理器安装原生工具，不会调用 Windows 下载流程。最新跨平台预发布是 [v0.3.0-rc.1](https://github.com/HypnosysNyx/GameArchiveManager/releases/tag/v0.3.0-rc.1)，提供 Windows x64 图形界面/命令行便携包和 Linux Python wheel。大体积嵌套加密真实样本与干净 Windows 11 虚拟机验收仍未完成，因此标为 RC。之前的 v0.2.0 仅发布源码。
 
 ## 先准备好
 
@@ -187,7 +197,7 @@ py main.py
 
 `pyw gui\app.py` 打开窗口，不带黑色控制台。`py main.py` 打开命令行。命令行也可以运行 `start_game_archive_manager.bat`。构建依赖见 [`requirements-build.txt`](requirements-build.txt)。
 
-### 0.2.0 改了什么
+### 历史版本：0.2.0 更新内容
 
 - 有桌面窗口。用 `pyw` 打开时没有黑色控制台。
 - 浅色、深色、自动三种外观，一点就变，并且会记住。中文和 English 也会记住。
@@ -199,6 +209,14 @@ py main.py
 - 缺少 `lz4.exe` 时先问，同意后安装官方 Windows 版本。
 - 任务失败时，日志、报告和历史会写明阶段和原因。
 - 扫描更快。文件头、CRC 和 SHA-256 校验还在。
+
+### v0.3.0 RC1 有哪些更新
+
+- Windows / Linux 共用源码，Linux 使用原生工具、XDG 用户数据目录和 pipx 安装与更新。
+- 修复直接选择压缩文件时遗漏同目录空文件夹密码候选的问题。
+- 改进内嵌 RAR5 候选验证诊断；继续保留扫描上限及安全校验。
+- 新增 Windows x64 图形/命令行便携安装包与 Linux wheel。
+- **尚未验收通过：** 大体积嵌套加密归档的完整内层交付，以及全新 Windows 11 虚拟机测试。
 
 ## 许可
 
