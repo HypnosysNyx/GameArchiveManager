@@ -1,12 +1,24 @@
 # GameArchiveManager v0.3.0 RC1 — Windows + Linux
 
+> **Newest packaged release / 最新可下载版本：v0.3.0 RC1（预发布）**。GitHub 的 “Latest” 目前仍指向较旧的 v0.2.0 源码版，因为 RC 预发布不能获得 Latest 标记。请下载此页的 Windows/Linux 安装包，不要从 v0.2.0 期待新版 EXE 或 wheel。
+>
+> **Newest downloads are below.** The older v0.2.0 is source-only; this release candidate is not yet a fully verified stable release.
+
+| Platform / 平台 | Download / 下载 | SHA-256 |
+| --- | --- | --- |
+| **Windows x64** | [Portable GUI + CLI ZIP](https://github.com/HypnosysNyx/GameArchiveManager/releases/download/v0.3.0-rc.1/GameArchiveManager-0.3.0rc1-windows-x64.zip) | [Windows checksum](https://github.com/HypnosysNyx/GameArchiveManager/releases/download/v0.3.0-rc.1/GameArchiveManager-0.3.0rc1-windows-x64.zip.sha256) |
+| **Linux** | [Python wheel](https://github.com/HypnosysNyx/GameArchiveManager/releases/download/v0.3.0-rc.1/game_archive_manager-0.3.0rc1-py3-none-any.whl) | [Linux SHA256SUMS](https://github.com/HypnosysNyx/GameArchiveManager/releases/download/v0.3.0-rc.1/SHA256SUMS) |
+
+**Windows：**完整解压 ZIP，安装 7-Zip 后双击 `GameArchiveManager.exe` 打开图形界面；命令行版本为 `GameArchiveManager-CLI.exe`。不需要单独安装 Python。**Linux：**先安装原生 `7zip`、`lz4`、`python3-tk`、`python3-venv`、`pipx`，再运行 `pipx install --python /usr/bin/python3 ./game_archive_manager-0.3.0rc1-py3-none-any.whl`。详情见 [Linux 安装和更新指南](https://github.com/HypnosysNyx/GameArchiveManager/blob/main/docs/LINUX.md)。
+
+
 This is a **public release candidate**, not a completed clean-machine or private-sample acceptance signoff.
 
 ## Downloads
 
 - **Windows x64**: portable ZIP with `GameArchiveManager.exe` (no-console GUI) and `GameArchiveManager-CLI.exe` (console); extract the entire ZIP first. No Python installation is required.
 - **Linux**: Python wheel, installable with `pipx` or a Python virtual environment. The CLI command is `game-archive-manager`, and the desktop command is `game-archive-manager-gui`.
-- **Source**: the same repository and core Python code power both systems. See [Linux setup](LINUX.md).
+- **Source**: the same repository and core Python code power both systems. See [Linux setup](https://github.com/HypnosysNyx/GameArchiveManager/blob/main/docs/LINUX.md).
 
 Use the SHA-256 checksum files supplied beside each binary to verify downloads.
 
@@ -24,7 +36,7 @@ Use the SHA-256 checksum files supplied beside each binary to verify downloads.
 
 Windows: install 7-Zip; LZ4 and WinRAR are optional depending on the source material. These third-party programs are **not** bundled with our ZIP. Windows x64 is the build target.
 
-Linux: install system `7zip`, `lz4`, `python3-tk`, and `pipx`; on Ubuntu/Debian, read [Linux setup](LINUX.md) for commands. Python 3.10 or newer is required when running from source or wheel.
+Linux: install system `7zip`, `lz4`, `python3-tk`, and `pipx`; on Ubuntu/Debian, read [Linux setup](https://github.com/HypnosysNyx/GameArchiveManager/blob/main/docs/LINUX.md) for commands. Python 3.10 or newer is required when running from source or wheel.
 
 ## Important acceptance limits
 
@@ -40,7 +52,7 @@ This candidate is suitable for evaluation with non-sensitive backup copies. **Do
 
 Windows: download and extract the newest ZIP into a fresh program folder; retain your user data and existing outputs separately. Do not overwrite running files.
 
-Linux: a single Git-based package can be refreshed with `pipx install --force --python /usr/bin/python3 'git+https://github.com/HypnosysNyx/GameArchiveManager.git@main'`, or install a reviewed tag/commit for reproducibility. See [Linux setup](LINUX.md) for isolation, data migration cautions and exact paths.
+Linux: a single Git-based package can be refreshed with `pipx install --force --python /usr/bin/python3 'git+https://github.com/HypnosysNyx/GameArchiveManager.git@main'`, or install a reviewed tag/commit for reproducibility. See [Linux setup](https://github.com/HypnosysNyx/GameArchiveManager/blob/main/docs/LINUX.md) for isolation, data migration cautions and exact paths.
 
 ## Privacy and provenance
 
