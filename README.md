@@ -1,5 +1,19 @@
 # GameArchiveManager
 
+> **📦 最新可下载版本 / Newest downloadable build: [v0.3.0 RC1 · Windows + Linux](https://github.com/HypnosysNyx/GameArchiveManager/releases/tag/v0.3.0-rc.1)**（2026-11-03，预发布 / Pre-release）。
+>
+> **注意：GitHub 显示的“Latest”目前指向旧的 v0.2.0 源码版，不是最新安装包。** GitHub 不会把 RC 预发布标记为 Latest。要下载最新 Windows/Linux 程序，请使用上面的 v0.3.0 RC1。
+>
+> **Note:** GitHub's “Latest” badge still points to the older, source-only v0.2.0. The newest packaged builds are in the v0.3.0 RC1 prerelease linked above.
+
+| 平台 / Platform | 最新下载 / Download | SHA-256 |
+| --- | --- | --- |
+| Windows x64 | [v0.3.0 RC1 GUI + CLI ZIP](https://github.com/HypnosysNyx/GameArchiveManager/releases/download/v0.3.0-rc.1/GameArchiveManager-0.3.0rc1-windows-x64.zip) | [校验文件](https://github.com/HypnosysNyx/GameArchiveManager/releases/download/v0.3.0-rc.1/GameArchiveManager-0.3.0rc1-windows-x64.zip.sha256) |
+| Linux | [v0.3.0 RC1 Python wheel](https://github.com/HypnosysNyx/GameArchiveManager/releases/download/v0.3.0-rc.1/game_archive_manager-0.3.0rc1-py3-none-any.whl) | [校验文件](https://github.com/HypnosysNyx/GameArchiveManager/releases/download/v0.3.0-rc.1/SHA256SUMS) |
+
+**Windows:** 完整解压 ZIP 后，双击 `GameArchiveManager.exe` 打开图形界面；`GameArchiveManager-CLI.exe` 是命令行版。先独立安装 7-Zip。**Linux:** 参阅 [安装与更新步骤](docs/LINUX.md)，使用系统 7-Zip、Tk 和 pipx。此 RC 的大体积加密内层归档及全新 Windows 11 VM 尚未完成最终验收。
+
+
 [English](#english) · [中文说明](#gamearchivemanager-中文)
 
 ## English
@@ -26,9 +40,9 @@ For the current v0.3.0-rc.1 Windows preview, download and extract the complete W
 
 The window is `pyw gui\app.py`. Choose a folder or archive, then start. Appearance, language, window placement, and settings are in that window. If you have just installed 7-Zip or LZ4, restart the program so it can find the tool.
 
-The command line is `py main.py`. The numbered steps below are that command line. They also describe the older `0.1.0` executable:
+The command line is `py main.py`. The numbered steps below describe the command-line entry point in the current version:
 
-1. Start `py main.py`, or double-click `GameArchiveManager.exe` from the older `0.1.0` package. If you have just installed 7-Zip, restart the program so it can find the tool again.
+1. Start `py main.py` from source or `GameArchiveManager-CLI.exe` from the current v0.3.0 RC1 ZIP. If you have just installed 7-Zip, restart the program so it can find the tool again.
 2. Drag in the folder containing the resources or a single archive, or paste a path into the black window and press Enter.
 3. Review the preview, then type `Y` and press Enter to confirm. Type `N` to cancel this run.
 4. Results are written to `GameArchive_Output` under the task directory. If a directory with that name already exists, the program uses `_2`, `_3`, and so on instead of overwriting it.
@@ -123,9 +137,9 @@ Linux 与 Windows 共用源码。原生 Ubuntu 依赖、pipx 安装及本地/Git
 
 窗口用 `pyw gui\app.py` 打开。选好文件夹或压缩包后开始。外观、语言、窗口位置和设置都在这个窗口里。刚装好 7-Zip 或 LZ4 的话，重启一次程序，让它重新寻找工具。
 
-命令行用 `py main.py`。下面的编号步骤说的是命令行，也适用于旧的 `0.1.0` 打包程序：
+命令行用 `py main.py`。下面的编号步骤针对当前版本的命令行程序：
 
-1. 运行 `py main.py`，或双击旧版 `0.1.0` 里的 `GameArchiveManager.exe`。刚装好 7-Zip 的话，重启一次程序，让它重新寻找工具。
+1. 从源码运行 `py main.py`，或运行 v0.3.0 RC1 压缩包内的 `GameArchiveManager-CLI.exe`。刚装好 7-Zip 的话，重启一次程序，让它重新寻找工具。
 2. 把资源所在的文件夹，或者一个压缩包，拖进黑色窗口；也可以直接粘贴路径后回车。
 3. 看预览，确认后输入 `Y` 回车。输入 `N` 取消这一次。
 4. 结果会放在任务目录下的 `GameArchive_Output`。如果那里已经有同名目录，会使用 `_2`、`_3`，不会覆盖旧结果。
