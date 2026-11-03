@@ -1,5 +1,14 @@
 # Current Status — 0.3.0rc1 Release Candidate
 
+## 2026-11-03 RC2 diagnostic slice (DRAFT; not released)
+
+- **Current downloadable binaries:** v0.3.0 RC1 Windows/Linux prerelease remains unchanged; no RC2 package has been built, merged or published. Development is on the existing branch `rc2/read-only-embedded-rar5-preflight` with draft PR #17.
+- **Real resource-8 status:** 8a and 8b embedded MP4 hosts each have one structurally valid encrypted RAR5 header within the 512 MiB production scan window. A complete read-only host signature census found no other structurally valid RAR5 start. Folder-name candidate differentiates from a deliberately invalid control at encrypted-header level, but **data password/CRC remain unverified**. 8a's complete embedded-tail 7-Zip data test failed (exit 2); independent UnRAR test also failed (CRC error exit 3); 8b has not undergone full data CRC verification. Real game content delivery remains FAILED / NEEDS_VERIFICATION. Temporary scratch files were removed; source identity metadata unchanged.
+- **Narrow code change:** retain sanitized candidate `LISTING` vs `DATA_EXTRACTION` stage and status even after scan stop; manual recovery prompt uses the first pending candidate's status rather than another candidate's global last status. Nonzero extractor exit, unsafe paths, partial data and CRC errors continue to fail. No changes to product scan limit, data CRC or output quotas. A controlled change touches the otherwise frozen `extractor/embedded_validator.py` only to preserve failure provenance, not extraction eligibility.
+- **Local verified tests:** 46/46 focused and 373/373 complete Windows unittests PASS (zero skipped), governance Overall PASS and git diff check PASS, using isolated LOCALAPPDATA and relative Tcl/Tk library paths. This does **not** establish real E2E success, Linux GUI regression or fresh Windows 11 VM acceptance.
+- **Next:** review the exact diagnostic diff, verify CI/CodeQL, and request an intact/alternative file-data source or password only when justified by read-only evidence. Do not rerun expensive outer extraction, delete original files or publish RC2 based solely on synthetic tests.
+
+
 2026-11-03 verification: Windows automated suite 357/357 PASS, Linux native installed-wheel synthetic extraction and Tk GUI PASS. Clean Windows 11 VM and private multi-GiB encrypted inner archives remain NOT VERIFIED. RC is a preview, not a stable production signoff. Public release details: `docs/RELEASE_NOTES_v0.3.0-rc.1.md`.
 
 Historical 0.2.0 source-update notes and earlier handoff evidence are retained below.

@@ -6,12 +6,13 @@ import sys
 import tempfile
 import unittest
 import zipfile
+from dataclasses import replace
 from pathlib import Path
 from unittest.mock import Mock, patch
 
 from analyzer.embedded_detector import EmbeddedArchiveDetector
 from coordinator.extraction_coordinator import ExtractionCoordinator
-from extractor.extractor_models import ExtractionResult, ExtractionStatus as Status
+from extractor.extractor_models import ExtractionResult, ExtractionStageDiagnostic, ExtractionStatus as Status
 from password.models import PasswordCandidate, PasswordSource
 from password.session_store import SessionPasswordStore
 from recovery.manual import ManualPasswordAction as Action, ManualPasswordResponse
@@ -296,6 +297,108 @@ class EmbeddedCandidateResolutionTests(unittest.TestCase):
                          "correct content")
         self.assertFalse(result.error_message)
         self.assertFalse(any("SCAN_LIMIT_REACHED" in step for step in result.steps))
+
+    def test_scan_cap_preserves_failed_stages_and_pending_password(self):
+        validator = Mock(side_effect=[
+            ExtractionResult(False, SECRET, status=Status.PASSWORD_REQUIRED,
+                stage_diagnostics=[ExtractionStageDiagnostic("LISTING", status=Status.PASSWORD_REQUIRED,
+                    error_type="TOOL_NONZERO", normalized_reason=SECRET)]),
+            ExtractionResult(False, SECRET, status=Status.FAILED,
+                stage_diagnostics=[ExtractionStageDiagnostic("DATA_EXTRACTION", status=Status.FAILED,
+                    error_type="TOOL_NONZERO", normalized_reason="private_payload.txt " + SECRET)])])
+        coordinator, offsets = self.scanlimited_fixture(validator)
+        result = coordinator.process(self.host)
+        self.assertFalse(result.success)
+        self.assertEqual(result.error_type, "EMBEDDED_INCOMPLETE")
+        self.assertIn("SCAN_LIMIT_REACHED", result.error_message)
+        self.assertIn("PASSWORD_UNRESOLVED", result.error_message)
+        self.assertEqual(result.password_recovery_result, "UNRESOLVED")
+        self.assertEqual([d.stage for d in result.stage_diagnostics], ["LISTING", "DATA_EXTRACTION"])
+        for diagnostic, offset in zip(result.stage_diagnostics, offsets):
+            self.assertIn(f"offset={offset};", diagnostic.normalized_reason)
+            self.assertEqual(diagnostic.error_type, "TOOL_NONZERO")
+        self.assertNotIn(SECRET, repr(result))
+        self.assertNotIn("private_payload.txt", repr(result))
+
+    def test_scan_cap_preserves_candidate_rejected_before_tool_validation(self):
+        validator = Mock()
+        coordinator, offsets = self.scanlimited_fixture(validator)
+        create_plan = coordinator.strategy.create_plan
+        def reject_candidate(info, *args):
+            plan = create_plan(info, *args)
+            if plan.archive_path != self.host:
+                return replace(plan, can_execute=False)
+            return plan
+        with patch.object(coordinator.strategy, "create_plan", side_effect=reject_candidate):
+            result = coordinator.process(self.host)
+        self.assertFalse(result.success)
+        self.assertEqual(result.error_type, "EMBEDDED_INCOMPLETE")
+        self.assertIn("SCAN_LIMIT_REACHED", result.error_message)
+        self.assertEqual([d.stage for d in result.stage_diagnostics],
+                         ["CANDIDATE_SAFETY", "CANDIDATE_SAFETY"])
+        for offset, diagnostic in zip(offsets, result.stage_diagnostics):
+            self.assertIn(f"offset={offset}; FAILED", diagnostic.normalized_reason)
+            self.assertIn(f"offset={offset}; FAILED", result.error_message)
+        validator.assert_not_called()
+
+    def test_manual_prompt_uses_first_pending_status_after_later_failure(self):
+        for later in (Status.FAILED, Status.PASSWORD_REQUIRED):
+            with self.subTest(later=later):
+                validator = Mock(side_effect=[
+                    ExtractionResult(False, "encrypted", status=Status.PASSWORD_REQUIRED),
+                    ExtractionResult(False, "wrong", status=Status.WRONG_PASSWORD),
+                    ExtractionResult(False, "later", status=later)])
+                coordinator, _ = self.scanlimited_fixture(validator)
+                callback = Mock(return_value=ManualPasswordResponse(Action.SKIP_ARCHIVE))
+                result = coordinator.process(self.host,
+                    [PasswordCandidate(SECRET, PasswordSource.USER_INPUT)], max_password_attempts=1,
+                    manual_password_callback=callback)
+                self.assertEqual(callback.call_args.args[0].status, Status.WRONG_PASSWORD)
+                self.assertFalse(result.success)
+                self.assertEqual(result.control_action, "SKIP_ARCHIVE")
+                self.assertNotIn(SECRET, repr(result))
+
+    def test_scan_cap_manual_recovery_requires_validated_data(self):
+        for data_valid in (False, True):
+            with self.subTest(data_valid=data_valid):
+                def validate(plan, password=None):
+                    if password is None:
+                        return ExtractionResult(False, "encrypted", status=Status.PASSWORD_REQUIRED,
+                            stage_diagnostics=[ExtractionStageDiagnostic("LISTING")])
+                    if data_valid:
+                        return self.successful(plan)
+                    return ExtractionResult(False, "CRC error " + SECRET, status=Status.FAILED,
+                        stage_diagnostics=[ExtractionStageDiagnostic("DATA_EXTRACTION",
+                            error_type="TOOL_NONZERO")])
+                coordinator, _ = self.scanlimited_fixture(validate)
+                store = SessionPasswordStore(self.root / "recovery_store.json")
+                callback = Mock(return_value=ManualPasswordResponse(Action.INPUT_PASSWORD, SECRET))
+                result = coordinator.process(self.host, max_password_attempts=0,
+                    manual_password_callback=callback, session_password_store=store)
+                self.assertEqual(result.success, data_valid)
+                self.assertEqual(len(store), int(data_valid))
+                self.assertEqual(result.manual_password_attempt_count, 1)
+                self.assertTrue(any("SCAN_LIMIT_REACHED" in step for step in result.steps))
+                if not data_valid:
+                    self.assertEqual(result.error_type, "EMBEDDED_INCOMPLETE")
+                    self.assertIn("password_status=NOT_PENDING", result.error_message)
+                    self.assertEqual(result.password_recovery_result, "FAILED")
+                    self.assertTrue(all(d.stage == "DATA_EXTRACTION"
+                        for d in result.stage_diagnostics[-2:]))
+                    self.assertTrue(all(d.status == Status.FAILED
+                        for d in result.stage_diagnostics[-2:]))
+                self.assertNotIn(SECRET, repr(result))
+
+    def test_failed_candidate_without_scan_cap_does_not_leak_validator_details(self):
+        self.host_with(1)
+        validator = Mock(return_value=ExtractionResult(False, "private_payload.txt " + SECRET,
+            error=SECRET, status=Status.FAILED,
+            stage_diagnostics=[ExtractionStageDiagnostic(SECRET, error_type=SECRET,
+                normalized_reason=SECRET)]))
+        result = self.coordinator(validator).process(self.host)
+        self.assertFalse(result.success)
+        self.assertNotIn(SECRET, repr(result))
+        self.assertNotIn("private_payload.txt", repr(result))
 
     def test_scan_checks_cancellation_even_without_signature_hits(self):
         self.host.write_bytes(b"x" * (4 * 1024**2))

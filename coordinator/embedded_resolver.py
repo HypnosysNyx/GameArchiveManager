@@ -34,6 +34,7 @@ class EmbeddedResolver:
         self.diagnostics = []
         # One latest validator status per candidate; detector caps candidates at 8.
         self.candidate_statuses = {}
+        self.candidate_stages = {}
         self.last = ExtractionResult(False, "no validated embedded candidate", status=Status.FAILED)
         self.control = ""
 
@@ -42,9 +43,11 @@ class EmbeddedResolver:
             return self._run()
         except EmbeddedIncomplete as error:
             candidates = ", ".join(
-                f"offset={offset}; {status.value}"
+                f"offset={offset}; {status.value}; validation_stage={self.candidate_stages[offset]}"
                 for offset, status in self.candidate_statuses.items()) or "none"
-            message = f"embedded search/validation incomplete: {error}; candidates={candidates}"
+            password_status = "PASSWORD_UNRESOLVED" if self.unresolved else "NOT_PENDING"
+            message = (f"embedded search/validation incomplete: {error}; candidates={candidates}; "
+                       f"password_status={password_status}")
             self.steps.append(message)
             return CoordinatorResult(False, self.plan.archive_path,
                 steps=self.steps, error_message=message,
@@ -53,7 +56,9 @@ class EmbeddedResolver:
                 password_attempt_count=self.automatic,
                 manual_password_attempt_count=self.manual,
                 stage_diagnostics=self.diagnostics.copy(),
-                password_recovery_result=("ATTEMPTS_EXHAUSTED" if self.manual >= self.owner.MAX_MANUAL_PASSWORD_ATTEMPTS else "UNRESOLVED"),
+                password_recovery_result=("FAILED" if not self.unresolved else
+                    "ATTEMPTS_EXHAUSTED" if self.manual >= self.owner.MAX_MANUAL_PASSWORD_ATTEMPTS
+                    else "UNRESOLVED"),
                 control_action="CANCEL_TASK" if str(error) == "CANCELLED" else "")
         finally:
             # These exact directories were minted by this attempt, never inferred
@@ -86,7 +91,16 @@ class EmbeddedResolver:
             # validator owns bounded, exact-start listing and data extraction.
             plan = self.owner.strategy.create_plan(info)
             if not plan.can_execute:
-                self.last = ExtractionResult(False, "candidate safety check rejected", status=Status.FAILED)
+                self.candidate_statuses[candidate.offset] = Status.FAILED
+                self.candidate_stages[candidate.offset] = "CANDIDATE_SAFETY"
+                self.diagnostics.append(ExtractionStageDiagnostic(
+                    stage="CANDIDATE_SAFETY", detected_format=candidate.format,
+                    status=Status.FAILED, error_type="CANDIDATE_REJECTED",
+                    normalized_reason=f"offset={candidate.offset}; FAILED"))
+                self.last = ExtractionResult(False, "candidate safety check rejected",
+                    status=Status.FAILED, stage_diagnostics=self.diagnostics.copy(),
+                    embedded_host=self.plan.archive_path, embedded_offset=candidate.offset,
+                    embedded_format=candidate.format, embedded_validation_state="FAILED")
                 continue
             plan = replace(plan, output_path=directory / "content", fallback_tools=[],
                 embedded_offset=candidate.offset, embedded_container_format=candidate.format)
@@ -126,7 +140,8 @@ class EmbeddedResolver:
             prompt_started = time.monotonic()
             try:
                 response = self.callback(ManualPasswordRequest(self.plan.archive_path,
-                    self.unresolved[0].detected_format, self.last.status,
+                    self.unresolved[0].detected_format,
+                    self.candidate_statuses[self.unresolved[0].embedded_offset],
                     self.automatic, self.manual, "EMBEDDED_VALIDATION"))
             except Exception:
                 raise EmbeddedIncomplete("MANUAL_CALLBACK_ERROR") from None
@@ -190,16 +205,25 @@ class EmbeddedResolver:
             # from each rejected password/data pass.
             if not attempt.output_path.is_symlink():
                 shutil.rmtree(attempt.output_path)
+        # Rebuild structured diagnostics from fixed codes, never forward a
+        # validator's raw message, filenames, commands or normalized text.
+        detail = result.stage_diagnostics[-1] if result.stage_diagnostics else None
+        stage = (detail.stage if detail and detail.stage in EmbeddedValidator.VALIDATION_STAGES
+                 else "EMBEDDED_VALIDATION")
+        code = (detail.error_type if detail and detail.error_type in EmbeddedValidator.FAILURE_CODES
+                else "")
         self.diagnostics.append(ExtractionStageDiagnostic(
-            stage="EMBEDDED_VALIDATION", detected_format=plan.detected_format,
-            tool=result.tool_used, status=result.status,
+            stage=stage, detected_format=plan.detected_format,
+            tool=result.tool_used, status=result.status, error_type=code,
             normalized_reason=f"offset={plan.embedded_offset}; {result.status.value}"))
-        result = replace(result, embedded_host=self.plan.archive_path,
+        result = replace(result, message="embedded candidate validation: " + result.status.value,
+            error="", embedded_host=self.plan.archive_path,
             embedded_offset=plan.embedded_offset, embedded_format=plan.detected_format,
             embedded_validation_state=("DATA_VALIDATED" if result.status is Status.SUCCESS else result.status.value),
             stage_diagnostics=self.diagnostics.copy())
         self.last = result
         self.candidate_statuses[plan.embedded_offset] = result.status
+        self.candidate_stages[plan.embedded_offset] = stage
         self.steps.append(f"候选 offset={plan.embedded_offset}, format={plan.detected_format}: {result.status.value}")
         return result
 
