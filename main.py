@@ -619,6 +619,10 @@ class CliSessionController:
 
 def main() -> int:
     """Create one application session; every task remains service-managed."""
+    import sys
+    if len(sys.argv)>1 and sys.argv[1]=='--machine-json':
+        from pan_machine import main as machine_main
+        return machine_main(sys.argv[2:])
     try:
         service = GameArchiveService()
     except Exception as error:
