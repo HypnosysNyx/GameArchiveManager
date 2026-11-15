@@ -1,0 +1,4 @@
+#!/bin/sh
+set -eu
+GAM_SOURCE_ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+exec "${GAM_PYTHON:-python3}" "$GAM_SOURCE_ROOT/main.py" "$@"
